@@ -1,4 +1,49 @@
-/* Styles for the app */
+
 body {
-  background-color: #FFD580; 
+  background-color: #fff7d1;  /* beige */
+}
+
+:root {
+  --brand: #004d40;       
+  --brand-dark: #00332a;  
+}
+
+.btn-dark,
+.btn-outline-dark {
+  color: #fff;
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+
+.btn-outline-dark {
+  background-color: transparent;
+  color: var(--brand);
+}
+
+.btn-outline-dark:hover,
+.btn-outline-dark:focus,
+.btn-dark:hover,
+.btn-dark:focus {
+  background-color: var(--brand-dark);
+  border-color: var(--brand-dark);
+  color: #fff;
+}
+
+.navbar-light .navbar-brand,
+.navbar-light .navbar-nav .nav-link {
+  color: var(--brand);
+}
+
+.navbar-light .navbar-nav .nav-link:hover,
+.navbar-light .navbar-nav .nav-link:focus {
+  color: var(--brand-dark);
+}
+
+/* 4) Global link color */
+a {
+  color: var(--brand);
+}
+
+a:hover {
+  color: var(--brand-dark);
 }
