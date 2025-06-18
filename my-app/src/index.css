@@ -39,7 +39,6 @@ body {
   color: var(--brand-dark);
 }
 
-/* 4) Global link color */
 a {
   color: var(--brand);
 }

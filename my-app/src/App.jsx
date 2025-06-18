@@ -10,12 +10,14 @@ import Button from 'react-bootstrap/Button';
 import Home from './pages/Home.jsx'
 import Test from './pages/Test.jsx'
 import Login from './pages/Login.jsx'
+import CreateProfile from './pages/CreateProfile.jsx'
 import logo from './assets/logo.png'
+
 
 export default function App() {
   return (
     <>
-      <Navbar expand="lg" style={{ backgroundColor: '#FFF7D1' }}>
+      <Navbar expand="lg" style={{ backgroundColor: '#fff7dc' }}>
         <Container>
           <Navbar.Brand as={Link} to="/">
             <img
@@ -40,6 +42,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/test" element={<Test />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/create-profile" element={<CreateProfile />} />
       </Routes>
     </>
   )
