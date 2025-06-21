@@ -7,6 +7,8 @@ import {
   Form,
   Button
 } from 'react-bootstrap'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'   
 
 export default function CreateProfile() {
   const [form, setForm] = useState({
@@ -19,7 +21,9 @@ export default function CreateProfile() {
     bio: '',
     profilePic: null
   })
+  const [error, setError] = useState('')  
   const fileInputRef = useRef()
+  const navigate = useNavigate()   
 
   const handleChange = (e) => {
     const { name, value, files } = e.target
@@ -30,10 +34,41 @@ export default function CreateProfile() {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // TODO: send `form` (including form.profilePic) to signup API
-    console.log(form)
+    setError('')                                             // clear previous error
+
+    // build FormData including file
+    const data = new FormData()
+    data.append('firstName', form.firstName)
+    data.append('lastName',  form.lastName)
+    data.append('nickname',  form.nickname)
+    data.append('email',     form.email)
+    data.append('password',  form.password)
+    data.append('zipCode',   form.zipCode)
+    data.append('bio',       form.bio)
+    if (form.profilePic) {
+      data.append('profilePic', form.profilePic)
+    }
+
+    try {
+      // POST to signup endpoint
+      const res = await axios.post(
+        '/api/auth/signup',
+        data,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      )
+      console.log(res.data)
+      // on success, navigate to login or home
+      navigate('/login')
+    } catch (err) {
+      console.error(err)
+      // show error message
+      setError(
+        err.response?.data?.error ||
+        'Failed to create profile. Please try again.'
+      )
+    }
   }
 
   // Inline styles for the circle uploader
