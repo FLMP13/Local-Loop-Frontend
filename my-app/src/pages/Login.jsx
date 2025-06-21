@@ -2,9 +2,11 @@
 import React, { useState } from 'react'
 import { Container, Row, Col, Form, Button } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom'
+import axios from 'axios' 
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
+  const [error, setError] = useState('') 
   const navigate = useNavigate()
 
   const handleChange = e =>
@@ -12,13 +14,27 @@ export default function Login() {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    // TODO: call login API, e.g. POST /api/auth/login
-    // if success: navigate('/')
-    // if failure: show error (e.g. toast or form error)
-    console.log('Logging in with', credentials)
-    // example:
-    // const ok = await login(credentials)
-    // if(ok) navigate('/')
+    setError('')                                           // clear previous
+
+    try {
+      // call login API
+      const res = await axios.post('/api/auth/login', credentials)
+      console.log(res.data)
+
+      // store token (e.g. localStorage)
+      localStorage.setItem('token', res.data.token)
+      // optionally store user info
+      localStorage.setItem('user', JSON.stringify(res.data.user))
+
+      // navigate to home (or dashboard)
+      navigate('/')
+    } catch (err) {
+      console.error(err)
+      setError(
+        err.response?.data?.error ||
+        'Login failed. Please check your credentials.'
+      )
+    }
   }
 
   return (
