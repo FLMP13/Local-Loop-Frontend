@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css'
 import React from 'react'
 import { Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter as Router } from 'react-router-dom';
 import Container from 'react-bootstrap/Container';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
@@ -11,7 +12,8 @@ import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import AddItem from './pages/AddItem.jsx'
 import ListItem from './pages/ListItem.jsx';
-import DeleteItem from './pages/DeleteItem.jsx';
+import ShowItem from './pages/ShowItem.jsx';
+import EditItem from './pages/EditItem.jsx';
 import logo from './assets/logo.png'
 
 export default function App() {
@@ -30,7 +32,6 @@ export default function App() {
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/">Home</Nav.Link>
             <Nav.Link as={Link} to="/add-item">Add Item</Nav.Link>
-            <Nav.Link as={Link} to="/delete-item">Delete Item</Nav.Link>
             <Nav.Link as={Link} to="/list-item">List Items</Nav.Link>
           </Nav>
           <Nav className="ms-auto">
@@ -43,9 +44,10 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/add-item" element={<AddItem />} />
-        <Route path="/delete-item" element={<DeleteItem />} />
         <Route path="/list-item" element={<ListItem />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/items/:id" element={<ShowItem />} />
+        <Route path="/items/:id/edit" element={<EditItem />} />
         {/* Add more routes as needed */}
       </Routes>
     </>

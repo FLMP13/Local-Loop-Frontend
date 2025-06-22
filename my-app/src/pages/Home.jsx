@@ -10,22 +10,27 @@ import ListItem from './ListItem';
 
 
 export default function Home() {
-    return (
-        <Container>
-            <Row className="justify-content-md-center">
-                <Col md={8}>
-                    <h1>Welcome to the Local Loop Application</h1>
-                    <p>Lend stuff etc</p>
-                    <Button variant="primary" as={Link} to="/add-item" className="mb-3">
-                        Add New Item
-                    </Button>
-                    {/* Dynamic item list */}
-                    <div className="item-list">
-                        <h2>Current Items</h2>
-                        <ListItem />
-                    </div>
-                </Col>
-            </Row>
-        </Container>
-    );
-} 
+  return (
+    <>
+      {/* Full-width hero section with a light background */}
+      <Container fluid className="bg-light text-dark text-center py-5">
+        <h1 className="display-4">Welcome to the Local Loop</h1>
+        <p className="lead mb-4">Share, lend, and discover items in your community</p>
+        <Button
+          as={Link}
+          to="/add-item"
+          size="lg"
+          variant="primary"        // primary button on light background
+        >
+          + Add New Item
+        </Button>
+      </Container>
+
+      {/* Full-width item list */}
+      <Container fluid className="py-5 px-3">
+        <h2 className="text-center mb-4">Current Items</h2>
+        <ListItem />
+      </Container>
+    </>
+  );
+}
