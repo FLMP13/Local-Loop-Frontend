@@ -8,8 +8,10 @@ import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Button from 'react-bootstrap/Button';
 import Home from './pages/Home.jsx'
-import Test from './pages/Test.jsx'
 import Login from './pages/Login.jsx'
+import AddItem from './pages/AddItem.jsx'
+import ListItem from './pages/ListItem.jsx';
+import DeleteItem from './pages/DeleteItem.jsx';
 import logo from './assets/logo.png'
 
 export default function App() {
@@ -27,7 +29,9 @@ export default function App() {
           </Navbar.Brand>
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/">Home</Nav.Link>
-            <Nav.Link as={Link} to="/test">Test</Nav.Link>
+            <Nav.Link as={Link} to="/add-item">Add Item</Nav.Link>
+            <Nav.Link as={Link} to="/delete-item">Delete Item</Nav.Link>
+            <Nav.Link as={Link} to="/list-item">List Items</Nav.Link>
           </Nav>
           <Nav className="ms-auto">
             <Button variant="outline-dark" as={Link} to="/login">
@@ -38,8 +42,11 @@ export default function App() {
       </Navbar>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/test" element={<Test />} />
+        <Route path="/add-item" element={<AddItem />} />
+        <Route path="/delete-item" element={<DeleteItem />} />
+        <Route path="/list-item" element={<ListItem />} />
         <Route path="/login" element={<Login />} />
+        {/* Add more routes as needed */}
       </Routes>
     </>
   )
