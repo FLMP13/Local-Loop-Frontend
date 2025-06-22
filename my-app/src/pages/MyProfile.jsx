@@ -5,6 +5,8 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom' 
 import { AuthContext } from '../context/AuthContext.jsx'
 
+//TODO: Profile pic persistence
+
 export default function MyProfile() {
   const { logout } = useContext(AuthContext)
   const navigate = useNavigate()
@@ -37,15 +39,26 @@ export default function MyProfile() {
         const res = await axios.get('/api/users/me', {
           headers: { Authorization: `Bearer ${token}` }
         })
-        setFormData({
-          firstName: res.data.firstName,
-          lastName:  res.data.lastName,
-          nickname:  res.data.nickname,
-          email:     res.data.email,
-          zipCode:   res.data.zipCode || '',
-          bio:       res.data.bio || '',
-          avatarUrl: res.data.avatarUrl || '',  // assumes backend sends an accessible URL
-        })
+        const {
+         firstName,
+         lastName,
+         nickname,
+         email,
+         zipCode = '',
+         bio = '',
+         profilePic
+       } = res.data
+       setFormData({
+         firstName,
+         lastName,
+         nickname,
+         email,
+         zipCode,
+         bio,
+         avatarUrl: profilePic
+           ? '/api/users/me/avatar'   // stream existing picture
+           : ''                       // no pic yet
+       })
       } catch (err) {
         console.error(err)
         setError('Failed to load profile.')
@@ -100,6 +113,7 @@ export default function MyProfile() {
           }
         }
       )
+      
       setSuccess('Profile updated!')
     } catch (err) {
       console.error(err)
@@ -161,14 +175,19 @@ export default function MyProfile() {
               onClick={handleAvatarClick}
             >
               {formData.avatarUrl
-                ? <Image src={formData.avatarUrl} roundedCircle fluid />
-                : <span style={{ lineHeight: '100px' }}>Upload</span>
+                ? (
+                  // display avatar from either endpoint or preview
+                  <Image src={formData.avatarUrl} roundedCircle fluid />
+                ) : (
+                  <span style={{ lineHeight: '100px' }}>Upload</span>
+                )
               }
             </div>
             <Form.Control
               type="file"
+              name="avatar" 
               accept="image/*"
-              ref={fileInputRef}                                              // CHANGED: attach ref
+              ref={fileInputRef}                                              // attach ref
               onChange={handleAvatarChange}
               style={{ display: 'none' }}
             />
