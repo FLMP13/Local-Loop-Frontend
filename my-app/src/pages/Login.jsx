@@ -1,13 +1,15 @@
 // src/pages/Login.jsx
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios' 
+import { AuthContext } from '../context/AuthContext.jsx'
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
   const [error, setError] = useState('') 
   const navigate = useNavigate()
+  const { login } = useContext(AuthContext) 
 
   const handleChange = e =>
     setCredentials(c => ({ ...c, [e.target.name]: e.target.value }))
@@ -20,14 +22,17 @@ export default function Login() {
       // call login API
       const res = await axios.post('/api/auth/login', credentials)
       console.log(res.data)
-
-      // store token (e.g. localStorage)
-      localStorage.setItem('token', res.data.token)
-      // optionally store user info
-      localStorage.setItem('user', JSON.stringify(res.data.user))
-
-      // navigate to home (or dashboard)
-      navigate('/')
+      // store token and user in context
+      login({
+        token: res.data.token,
+        user: {
+          id:       res.data.user.id,
+          nickname: res.data.user.nickname,
+          email:    res.data.user.email,
+          profilePic: res.data.user.profilePic
+        }
+      })
+      navigate('/')   
     } catch (err) {
       console.error(err)
       setError(
