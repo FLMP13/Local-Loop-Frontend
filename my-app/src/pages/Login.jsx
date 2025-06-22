@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react'
-import { Container, Row, Col, Form, Button } from 'react-bootstrap'
+import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios' 
 
@@ -42,6 +42,14 @@ export default function Login() {
       <Row className="justify-content-center">
         <Col md={6} lg={4}>
           <h1 className="mb-4 text-center">Log In</h1>
+
+          {/* UPDATE: render error alert if present */}
+          {error && (
+            <Alert variant="danger" onClose={() => setError('')} dismissible>
+              {error}
+            </Alert>
+          )}
+          
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Email</Form.Label>
