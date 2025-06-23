@@ -1,6 +1,14 @@
+/* Styles for the app */
 
 body {
-  background-color: #fff7d1;  /* beige */
+  background-color: #3b854abd; /* dark green */
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  color: #fff7d1;  /* beige */
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
 }
 
 :root {
@@ -45,4 +53,21 @@ a {
 
 a:hover {
   color: var(--brand-dark);
+}
+
+#root > nav > div > a > img {
+  width: 200px;
+  height: 200px;
+  background-color: #FEF6DC; 
+  border-radius: 50%;
+}
+
+#root > nav > div > div.me-auto.navbar-nav > a {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+  border-radius: 50px;
+  padding: 40px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #3b854aab;
 }
