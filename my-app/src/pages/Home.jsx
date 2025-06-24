@@ -6,7 +6,9 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import ListItem from './ListItem';
+import MyItems from './MyItems.jsx';
+import MyBorrowings from './MyBorrowings.jsx';
+import MyLendings from './MyLendings.jsx';
 
 
 export default function Home() {
@@ -18,9 +20,30 @@ export default function Home() {
         <p className="lead mb-4">Share, lend, and discover items in your community</p>
         <Button
           as={Link}
+          to="/create-profile"
+          size="lg"
+          variant="primary" // primary button on light background
+          className="mb-3"
+        >
+          Create Profile
+        </Button>
+        <div className="mb-3"></div>
+        <Button
+          as={Link}
+          to="/login"
+          size="lg"
+          variant="primary" // primary button on light background
+          className="mb-3"
+        >
+          Login
+        </Button>
+        <div className="mb-3"></div>
+        <Button
+          as={Link}
           to="/add-item"
           size="lg"
-          variant="primary"        // primary button on light background
+          variant="primary" // primary button on light background
+          className="mb-3"
         >
           + Add New Item
         </Button>
@@ -29,7 +52,7 @@ export default function Home() {
       {/* Full-width item list */}
       <Container fluid className="py-5 px-3">
         <h2 className="text-center mb-4">Current Items</h2>
-        <ListItem />
+        <MyItems /> 
       </Container>
     </>
   );

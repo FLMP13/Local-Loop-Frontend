@@ -1,6 +1,6 @@
 // Page for Adding an Item in the Frontend which is then sent to the Backend for storage 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
@@ -10,13 +10,14 @@ import Col from 'react-bootstrap/Col';
 import Alert from 'react-bootstrap/Alert';
 import Image from 'react-bootstrap/Image';
 import Card from 'react-bootstrap/Card';
+import { AuthContext } from '../context/AuthContext'; // Adjust path if needed
 
 const categories = [
-  'Electronics',
-  'Furniture',
-  'Clothing',
+  'Electronics', 
+  'Furniture', // Is that something to lend/borrow?
+  'Clothing', // Is that something to lend/borrow?
   'Books',
-  'Sports',
+  'Sports', //Sporting equipment?
   'Toys',
   'Tools',
   'Other'
@@ -24,6 +25,7 @@ const categories = [
 
 
 export default function AddItem() {
+    const { user } = useContext(AuthContext);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
@@ -62,6 +64,16 @@ export default function AddItem() {
             setError('Failed to add item. Please try again.');
         }
     };
+
+    if (!user) {
+        return (
+            <Container className="py-5">
+                <Alert variant="info" className="text-center">
+                    Please <Link to="/login">log in</Link> or <Link to="/create-profile">create a profile</Link> to add an item.
+                </Alert>
+            </Container>
+        );
+    }
     
     return (
         <Container className="py-5">
@@ -83,7 +95,7 @@ export default function AddItem() {
                                     />
                                 </Form.Group>
     
-                <Form.Group controlId="formDescription" className="mb-3">
+                                <Form.Group controlId="formDescription" className="mb-3">
                                     <Form.Label>Description</Form.Label>
                                     <Form.Control
                                         as="textarea"
@@ -109,7 +121,7 @@ export default function AddItem() {
                                     </Form.Select>
                                 </Form.Group>
 
-                <Form.Group controlId="formPrice" className="mb-3">
+                                <Form.Group controlId="formPrice" className="mb-3">
                                     <Form.Label>Weekly Price</Form.Label>
                                     <Form.Control
                                         type="number"
