@@ -51,7 +51,7 @@ export default function MyItems({ statusFilter, title = "My Items" }) {
         <Container fluid className="py-5 px-4">
             <h2 className="text-center mb-5">My Items</h2>
             {error && <Alert variant="danger">{error}</Alert>}
-
+            <p>This is some text to debug</p>
             <Row xs={1} sm={2} md={4} className="g-4">
                 {items.map(item => (
                     <Col key={item._id}>
