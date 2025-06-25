@@ -25,7 +25,7 @@ const categories = [
 
 
 export default function AddItem() {
-    const { user } = useContext(AuthContext);
+    const { user, token } = useContext(AuthContext);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
@@ -35,12 +35,14 @@ export default function AddItem() {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    // Handle image selection and preview generation
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files).slice(0, 3); // Limit to 3 images
         setImages(files);
         setImagePreviews(files.map(file => URL.createObjectURL(file)));
     };
     
+    // Handle form submission to add a new item by sending data to the backend
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -54,11 +56,12 @@ export default function AddItem() {
             });
             const response = await axios.post('/api/items', formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`
                 }
             });
             console.log('Item added:', response.data);
-            navigate('/'); // Redirect to home after successful submission
+            navigate('/'); // Redirect to home or items page after successful submission
         } catch (err) {
             console.error('Error adding item:', err);
             setError('Failed to add item. Please try again.');
