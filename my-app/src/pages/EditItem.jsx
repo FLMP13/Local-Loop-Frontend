@@ -8,11 +8,13 @@ import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Alert from 'react-bootstrap/Alert';
 
+// Needs to be adapted to your categories
 const categories = [
   'Electronics','Furniture','Clothing',
   'Books','Sports','Toys','Tools','Other'
 ];
 
+// Function to edit an item by fetching its details, allowing the user to modify them, and then saving the changes
 export default function EditItem() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export default function EditItem() {
   const [category, setCategory] = useState('');
   const [error, setError] = useState('');
 
+  // Fetch item details when component mounts and populate form fields
   useEffect(() => {
     axios.get(`/api/items/${id}`)
       .then(r => {
@@ -34,6 +37,7 @@ export default function EditItem() {
       .catch(e => setError('Failed to load item'));
   }, [id]);
 
+  // Handle form submission to update the item details by sending the modified data to the backend
   const handleSubmit = async e => {
     e.preventDefault();
     try {

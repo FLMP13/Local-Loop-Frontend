@@ -72,7 +72,11 @@ export default function MyItems({ statusFilter, title = "My Items" }) {
                                     <strong>Status:</strong> {item.status}
                                 </Card.Text>
                                 <Card.Text>
-                                    <strong>Owner:</strong> {item.owner?.name || item.owner}
+                                    <strong>Owner:</strong>{' '}
+                                    {item.owner
+                                        ? (item.owner.nickname
+                                            || `${item.owner.firstName} ${item.owner.lastName}`)
+                                        : 'Unknown'}
                                 </Card.Text>
                                 <Card.Text className="flex-grow-1">
                                     {item.description}
