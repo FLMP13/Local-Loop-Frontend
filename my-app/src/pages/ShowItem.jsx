@@ -1,8 +1,7 @@
-// Page for showing the item with details and images, they should be fetched frm the backend and displayed when someone clicks on show details
-import React, { useEffect, useState, useContext } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext.jsx'; 
-import axios from 'axios';
+import React, { useContext } from 'react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext.jsx';
+import { useShowItem } from '../hooks/useShowItem';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
@@ -11,42 +10,15 @@ import Button from 'react-bootstrap/Button';
 import Alert from 'react-bootstrap/Alert';
 
 export default function ShowItem() {
-    const { id } = useParams();
     const { user } = useContext(AuthContext);
-    const navigate = useNavigate();
-    const [item, setItem] = useState(null);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        const fetchItem = async () => {
-            try {
-                const response = await axios.get(`/api/items/${id}`);
-                setItem(response.data);
-            } catch (err) {
-                console.error('Error fetching item:', err);
-                setError('Failed to fetch item. Please try again.');
-            }
-        };
-        fetchItem();
-    }, [id]);
-
-    const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
-    try {
-      await axios.delete(`/api/items/${id}`);
-      navigate('/');
-    } catch (err) {
-      console.error('Error deleting item:', err);
-      setError('Failed to delete item. Please try again.');
-    }
-  };
+    const { item, error, loading, handleDelete } = useShowItem();
 
     if (error) {
         return <Alert variant="danger">{error}</Alert>;
     }
 
-    if (!item) {
-        return <p>Loading...</p>;
+    if (loading) {
+        return <p>Loading…</p>;
     }
 
     return (
@@ -75,33 +47,33 @@ export default function ShowItem() {
                                 ))}
                             </Row>
                             <div className="d-flex justify-content-between mt-4">
-        <Button variant="secondary" onClick={() => navigate(-1)}>
-          Back
-        </Button>
+                                <Button variant="secondary" onClick={() => window.history.back()}>
+                                    Back
+                                </Button>
 
-                {/* only show Edit/Delete if logged in _and_ you are the owner */}
-                {user?.id === item.owner?._id && (
-                  <>
-                    <Button
-                      variant="warning"
-                      as={Link}
-                      to={`/items/${id}/edit`}
-                    >
-                      Edit Item
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={handleDelete}
-                    >
-                      Delete Item
-                    </Button>
-                  </>
-                )}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
-  );
+                                {/* only show Edit/Delete if logged in _and_ you are the owner */}
+                                {user?.id === item.owner?._id && (
+                                    <>
+                                        <Button
+                                            variant="warning"
+                                            as={Link}
+                                            to={`/items/${item._id}/edit`}
+                                        >
+                                            Edit Item
+                                        </Button>
+                                        <Button
+                                            variant="danger"
+                                            onClick={handleDelete}
+                                        >
+                                            Delete Item
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+        </Container>
+    );
 }
