@@ -1,10 +1,11 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Link } from 'react-router-dom'
-import axios from 'axios'
+import { useItems } from '../hooks/useItems'
 import {
   Container, Row, Col, Card, Button, Alert, Form
 } from 'react-bootstrap'
 import { AuthContext } from '../context/AuthContext.jsx'
+import Spinner from 'react-bootstrap/Spinner'
 
 const categories = [
   '', 'Electronics','Furniture','Clothing',
@@ -13,29 +14,10 @@ const categories = [
 
 export default function Home() {
   const { user } = useContext(AuthContext)
-  const [items, setItems] = useState([])
-  const [error, setError] = useState('')
   const [filters, setFilters] = useState({
     search: '', category: '', minPrice: '', maxPrice: '', sort: ''
   })
-
-  const fetchItems = async () => {
-    try {
-      const params = new URLSearchParams()
-      Object.entries(filters).forEach(([k,v]) => {
-        if (v) params.append(k, v)
-      })
-      const res = await axios.get(`/api/items?${params.toString()}`)
-      setItems(res.data)
-    } catch (err) {
-      console.error(err)
-      setError('Failed to load items.')
-    }
-  }
-
-  useEffect(() => {
-    fetchItems()
-  }, [])
+  const { items, error, loading } = useItems(filters)
 
   const handleFilterChange = e => {
     const { name, value } = e.target
@@ -44,13 +26,10 @@ export default function Home() {
 
   const handleApply = e => {
     e.preventDefault()
-    fetchItems()
   }
 
   const handleReset = () => {
     setFilters({ search:'', category:'', minPrice:'', maxPrice:'', sort:'' })
-    setError('')
-    setTimeout(fetchItems, 0)
   }
 
   return (
@@ -112,43 +91,51 @@ export default function Home() {
 
       {error && <Alert variant="danger">{error}</Alert>}
 
-      <Row xs={1} sm={2} md={3} lg={4} className="g-4">
-        {items.map(item => (
-          <Col key={item._id}>
-            <Card className="h-100">
-              {item.images?.[0] && (
-                <Card.Img
-                  variant="top"
-                  src={`/api/items/${item._id}/image/0`}
-                  style={{ height: '180px', objectFit: 'cover' }}
-                />
-              )}
-              <Card.Body className="d-flex flex-column">
-                <Card.Title>{item.title}</Card.Title>
-                <Card.Subtitle className="mb-2 text-muted">
-                  {item.category}
-                </Card.Subtitle>
-                <Card.Text className="flex-grow-1">
-                  {item.description.substring(0, 60)}…
-                </Card.Text>
-                <div className="mb-2">
-                  <strong>${item.price.toFixed(2)}</strong>
-                </div>
-                <Button
-                  as={Link}
-                  to={`/items/${item._id}`}
-                  variant="primary"
-                  className="mt-auto"
-                >
-                  View
-                </Button>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      {loading ? (
+        <div className="text-center my-4">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+        </div>
+      ) : (
+        <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+          {items.map(item => (
+            <Col key={item._id}>
+              <Card className="h-100">
+                {item.images?.[0] && (
+                  <Card.Img
+                    variant="top"
+                    src={`/api/items/${item._id}/image/0`}
+                    style={{ height: '180px', objectFit: 'cover' }}
+                  />
+                )}
+                <Card.Body className="d-flex flex-column">
+                  <Card.Title>{item.title}</Card.Title>
+                  <Card.Subtitle className="mb-2 text-muted">
+                    {item.category}
+                  </Card.Subtitle>
+                  <Card.Text className="flex-grow-1">
+                    {item.description.substring(0, 60)}…
+                  </Card.Text>
+                  <div className="mb-2">
+                    <strong>${item.price.toFixed(2)}</strong>
+                  </div>
+                  <Button
+                    as={Link}
+                    to={`/items/${item._id}`}
+                    variant="primary"
+                    className="mt-auto"
+                  >
+                    View
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
 
-      {!items.length && !error && (
+      {!loading && !items.length && !error && (
         <p className="text-center mt-4">No items found.</p>
       )}
     </Container>
