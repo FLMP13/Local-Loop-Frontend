@@ -42,7 +42,9 @@ export default function CreateProfile() {
     const data = new FormData()
     data.append('firstName', form.firstName)
     data.append('lastName',  form.lastName)
-    data.append('nickname',  form.nickname)
+    if (form.nickname) {
+      data.append('nickname',  form.nickname)
+    }
     data.append('email',     form.email)
     data.append('password',  form.password)
     data.append('zipCode',   form.zipCode)
@@ -55,8 +57,7 @@ export default function CreateProfile() {
       // POST to signup endpoint
       const res = await axios.post(
         '/api/auth/signup',
-        data,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        data
       )
       console.log(res.data)
       // on success, navigate to login or home
