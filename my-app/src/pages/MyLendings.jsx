@@ -1,7 +1,6 @@
 import React from 'react';
-import MyItems from './MyItems';
+import TransactionList from '../components/TransactionList';
 
 export default function MyLendings() {
-  return <MyItems statusFilter="lent" title="My Lendings" />;
-  // Better: List of transactions filtered by status
+  return <TransactionList endpoint="/api/transactions/lendings" title="My Lendings" />;
 }

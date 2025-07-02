@@ -8,10 +8,23 @@ import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
 import Button from 'react-bootstrap/Button';
 import Alert from 'react-bootstrap/Alert';
+import axios from 'axios';
 
 export default function ShowItem() {
     const { user } = useContext(AuthContext);
     const { item, error, loading, handleDelete } = useShowItem();
+
+    const handleRequestLend = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post('/api/transactions/request', { itemId: item._id }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert('Request sent!');
+        } catch (err) {
+            alert(err.response?.data?.error || 'Failed to send request.');
+        }
+    };
 
     if (error) {
         return <Alert variant="danger">{error}</Alert>;
@@ -30,10 +43,23 @@ export default function ShowItem() {
                         <Card.Body>
                             <Card.Title>Description</Card.Title>
                             <Card.Text>{item.description}</Card.Text>
+
                             <Card.Title>Price</Card.Title>
                             <Card.Text>${item.price}</Card.Text>
+
                             <Card.Title>Category</Card.Title>
                             <Card.Text>{item.category}</Card.Text>
+
+                            <Card.Title>Owner</Card.Title>
+                            <Card.Text>
+                                {item.owner?.nickname || item.owner?.email || 'Unknown'}
+                            </Card.Text>
+
+                            <Card.Title>Zip Code</Card.Title>
+                            <Card.Text>
+                                {item.owner?.zipCode || 'Unknown'}
+                            </Card.Text>
+
                             <Card.Title>Images</Card.Title>
                             <Row>
                                 {item.images.map((_, index) => (
@@ -50,14 +76,15 @@ export default function ShowItem() {
                                 <Button variant="secondary" onClick={() => window.history.back()}>
                                     Back
                                 </Button>
-
-                                {/* only show Edit/Delete if logged in _and_ you are the owner */}
-                                {user?.id === item.owner?._id && (
-                                    <>
+                                
+                                {user?.id === item.owner?._id ? (
+                                    // if item is owned by the user
+                                    <div>
                                         <Button
                                             variant="warning"
                                             as={Link}
                                             to={`/items/${item._id}/edit`}
+                                            className="me-2"
                                         >
                                             Edit Item
                                         </Button>
@@ -67,7 +94,17 @@ export default function ShowItem() {
                                         >
                                             Delete Item
                                         </Button>
-                                    </>
+                                    </div>
+                                ) : (
+                                    // if item is not owned by the user
+                                    user && (
+                                        <Button
+                                            variant="secondary"
+                                            onClick={handleRequestLend}
+                                        >
+                                            Request to Lend
+                                        </Button>
+                                    )
                                 )}
                             </div>
                         </Card.Body>

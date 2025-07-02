@@ -8,6 +8,8 @@ import Container from 'react-bootstrap/Container';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Button from 'react-bootstrap/Button';
+import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import NavDropdown from 'react-bootstrap/NavDropdown';
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import CreateProfile from './pages/CreateProfile.jsx'
@@ -20,6 +22,7 @@ import MyBorrowings from './pages/MyBorrowings.jsx';
 import MyLendings from './pages/MyLendings.jsx'; 
 import logo from './assets/logo.png'
 import { AuthContext } from './context/AuthContext.jsx' 
+import ShowTransaction from './pages/ShowTransaction';
 
 
 export default function App() {
@@ -44,13 +47,40 @@ export default function App() {
             />
           </Navbar.Brand>
           <Nav className="me-auto">
-            <Nav.Link as={Link} to="/my-items">My Items</Nav.Link>
-            <Nav.Link as={Link} to="/add-item">Add Item</Nav.Link>
+            <ButtonGroup>
+              <NavDropdown
+                title="My Items"
+                id="my-items-dropdown"
+                as={Button}
+                variant="outline-primary"
+                className="me-2"
+                style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
+              >
+                <NavDropdown.Item as={Link} to="/my-items">
+                  All My Items
+                </NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/my-borrowings">
+                  My Borrowings
+                </NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/my-lendings">
+                  My Lendings
+                </NavDropdown.Item>
+              </NavDropdown>
+              <Button
+                as={Link}
+                to="/add-item"
+                variant="outline-primary"
+                className="ms-2"
+                style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
+              >
+                Add Item
+              </Button>
+            </ButtonGroup>
           </Nav>
           <Nav className="ms-auto">
             <Button
               as={Link}
-              to={user ? '/profile' : '/login'}                             // conditional redirect
+              to={user ? '/profile' : '/login'}
               variant="dark"
               className="ms-auto me-2"
             >
@@ -79,6 +109,7 @@ export default function App() {
         <Route path="/profile" element={<MyProfile />} />
         <Route path="/items/:id" element={<ShowItem />} />
         <Route path="/items/:id/edit" element={<EditItem />} />
+        <Route path="/transactions/:id" element={<ShowTransaction />} />
       </Routes>
     </>
   );
