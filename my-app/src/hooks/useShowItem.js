@@ -12,7 +12,10 @@ export function useShowItem() {
   useEffect(() => {
     const fetchItem = async () => {
       try {
-        const response = await axios.get(`/api/items/${id}`);
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`/api/items/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         setItem(response.data);
       } catch (err) {
         console.error('Error fetching item in hook:', err);

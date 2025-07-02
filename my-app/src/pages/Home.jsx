@@ -165,39 +165,52 @@ export default function Home() {
         </div>
       ) : (
         <Row xs={1} sm={2} md={3} lg={4} className="g-4">
-          {items.map(item => (
-            <Col key={item._id}>
-              <Card className="h-100 shadow-sm">
-                {item.images?.[0] && (
-                  <Card.Img
-                    variant="top"
-                    src={`/api/items/${item._id}/image/0`}
-                    style={{ height: '180px', objectFit: 'cover' }}
-                  />
-                )}
-                <Card.Body className="d-flex flex-column">
-                  <Card.Title className="fs-5">{item.title}</Card.Title>
-                  <Card.Subtitle className="mb-2 text-muted small">
-                    {item.category}
-                  </Card.Subtitle>
-                  <Card.Text className="flex-grow-1 text-truncate small">
-                    {item.description}
-                  </Card.Text>
-                  <div className="mt-2 mb-3">
-                    <strong className="fs-6">${item.price.toFixed(2)}</strong>
-                  </div>
-                  <Button
-                    as={Link}
-                    to={`/items/${item._id}`}
-                    variant="primary"
-                    className="mt-auto"
-                  >
-                    View
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
+          {items
+            .filter(item => !user || item.owner?._id !== user.id)
+            .map(item => (
+              <Col key={item._id}>
+                <Card className="h-100 shadow-sm">
+                  {item.images?.[0] && (
+                    <Card.Img
+                      variant="top"
+                      src={`/api/items/${item._id}/image/0`}
+                      style={{ height: '180px', objectFit: 'cover' }}
+                    />
+                  )}
+                  <Card.Body className="d-flex flex-column">
+                    <Card.Title className="fs-5">{item.title}</Card.Title>
+                    <Card.Subtitle className="mb-2 text-muted small">
+                      {item.category}
+                    </Card.Subtitle>
+                    <Card.Text className="flex-grow-1 text-truncate small">
+                      {item.description}
+                    </Card.Text>
+                    <div className="mt-2 mb-3">
+                      <strong className="fs-6">${item.price.toFixed(2)}</strong>
+                    </div>
+                    <Card.Text className="mb-1">
+                      <strong>Owner:</strong> {item.owner?.nickname || item.owner?.email || 'Unknown'}
+                    </Card.Text>
+                    <Card.Text className="mb-2">
+                      <strong>ZIP:</strong> {item.owner?.zipCode || 'Unknown'}
+                    </Card.Text>
+                    {user && item.distance !== undefined && item.distance !== null && (
+                      <Card.Text>
+                        <strong>Distance:</strong> {item.distance} km
+                      </Card.Text>
+                    )}
+                    <Button
+                      as={Link}
+                      to={`/items/${item._id}`}
+                      variant="primary"
+                      className="mt-auto"
+                    >
+                      View
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
         </Row>
       )}
 

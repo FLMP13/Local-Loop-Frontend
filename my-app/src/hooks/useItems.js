@@ -1,50 +1,31 @@
-import { useState, useEffect, useContext } from 'react';  
+import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { AuthContext } from '../context/AuthContext.jsx'; 
+import { AuthContext } from '../context/AuthContext.jsx';
 
 export function useItems(filters) {
-  const [items, setItems] = useState([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
   const { user } = useContext(AuthContext);
-  const token   = user?.token;
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    let isCancelled = false;
-
+    setLoading(true);
     const fetchItems = async () => {
-      setLoading(true);
-      setError('');
-
       try {
-        const hasRadius = !!filters.radius;
-        const baseUrl   = hasRadius ? '/api/items/nearby' : '/api/items';
-        
-        // Build query parameters from filters
-        const params = new URLSearchParams();
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value) params.append(key, value);
+        const token = user?.token || localStorage.getItem('token');
+        const response = await axios.get('/api/items', {
+          params: filters,
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
-
-        // Fetch with auth header if we have a token
-        const res = await axios.get(
-          `${baseUrl}?${params.toString()}`,
-          token
-            ? { headers: { Authorization: `Bearer ${token}` } }
-            : {}
-        ); 
-
-        if (!isCancelled) setItems(res.data);
+        setItems(response.data);
       } catch (err) {
-        if (!isCancelled) setError('Failed to load items.');
+        setError('Failed to fetch items');
       } finally {
-        if (!isCancelled) setLoading(false);
+        setLoading(false);
       }
     };
     fetchItems();
-    return () => { isCancelled = true; };
-  }, [filters, token]);
+  }, [filters, user]);
 
-  return { items, error, loading };
+  return { items, loading, error };
 }
