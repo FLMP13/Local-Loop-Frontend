@@ -13,7 +13,11 @@ export function useItems(filters) {
     const fetchItems = async () => {
       try {
         const token = user?.token || localStorage.getItem('token');
-        const response = await axios.get('/api/items', {
+        const hasRadius = filters?.radius?.trim();
+
+        const endpoint = hasRadius ? '/api/items/nearby' : '/api/items';
+
+        const response = await axios.get(endpoint, {
           params: filters,
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
