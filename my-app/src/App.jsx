@@ -20,6 +20,7 @@ import EditItem from './pages/EditItem.jsx';
 import MyItems from './pages/MyItems.jsx';
 import MyBorrowings from './pages/MyBorrowings.jsx'; 
 import MyLendings from './pages/MyLendings.jsx'; 
+import Payment from './pages/Payment.jsx';
 import logo from './assets/logo.png'
 import { AuthContext } from './context/AuthContext.jsx' 
 import ShowTransaction from './pages/ShowTransaction';
@@ -110,6 +111,7 @@ export default function App() {
         <Route path="/items/:id" element={<ShowItem />} />
         <Route path="/items/:id/edit" element={<EditItem />} />
         <Route path="/transactions/:id" element={<ShowTransaction />} />
+        <Route path="/payment" element={<Payment />} />
       </Routes>
     </>
   );
