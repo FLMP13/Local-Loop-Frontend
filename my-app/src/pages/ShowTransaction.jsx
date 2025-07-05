@@ -7,6 +7,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Alert from 'react-bootstrap/Alert';
 import Button from 'react-bootstrap/Button';
+import ReviewModal from '../components/ReviewModal';
 
 export default function ShowTransaction() {
   const { id } = useParams();
@@ -14,6 +15,8 @@ export default function ShowTransaction() {
   const [transaction, setTransaction] = useState(null);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [canReview, setCanReview] = useState({ canReview: false, role: null });
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -31,6 +34,27 @@ export default function ShowTransaction() {
     };
     fetchTransaction();
   }, [id]);
+
+  useEffect(() => {
+    const checkCanReview = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/reviews/can-review/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCanReview(data);
+        }
+      } catch (err) {
+        console.error('Failed to check review status');
+      }
+    };
+
+    if (transaction) {
+      checkCanReview();
+    }
+  }, [id, transaction]);
 
   const handleAction = async (action) => {
     setUpdating(true);
@@ -50,6 +74,30 @@ export default function ShowTransaction() {
       // Optionally handle error
     }
     setUpdating(false);
+  };
+
+  const handleCompleteTransaction = async () => {
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/transactions/${transaction._id}/complete`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Refetch transaction data
+      const res = await fetch(`/api/transactions/${transaction._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setTransaction(data);
+    } catch (err) {
+      console.error('Failed to complete transaction');
+    }
+    setUpdating(false);
+  };
+
+  const handleReviewSubmitted = () => {
+    setCanReview({ canReview: false, role: null });
   };
 
   if (error) return <Alert variant="danger">{error}</Alert>;
@@ -87,6 +135,31 @@ export default function ShowTransaction() {
               </Button>
             </div>
           )}
+          
+          {/* Add Complete Transaction Button for Borrower */}
+          {user?.id === transaction.borrower?._id && transaction.status === 'accepted' && (
+            <div className="d-flex justify-content-end mt-3">
+              <Button
+                variant="success"
+                disabled={updating}
+                onClick={handleCompleteTransaction}
+              >
+                Mark as Returned
+              </Button>
+            </div>
+          )}
+
+          {/* Add Review Button */}
+          {canReview.canReview && (
+            <div className="d-flex justify-content-end mt-3">
+              <Button
+                variant="primary"
+                onClick={() => setShowReviewModal(true)}
+              >
+                Leave Review
+              </Button>
+            </div>
+          )}
         </Card.Body>
       </Card>
       {item && (
@@ -117,6 +190,14 @@ export default function ShowTransaction() {
           </Card.Body>
         </Card>
       )}
+
+      <ReviewModal
+        show={showReviewModal}
+        onHide={() => setShowReviewModal(false)}
+        transaction={transaction}
+        userRole={canReview.role}
+        onReviewSubmitted={handleReviewSubmitted}
+      />
     </Container>
   );
 }
