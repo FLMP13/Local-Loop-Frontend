@@ -20,10 +20,10 @@ import EditItem from './pages/EditItem.jsx';
 import MyItems from './pages/MyItems.jsx';
 import MyBorrowings from './pages/MyBorrowings.jsx'; 
 import MyLendings from './pages/MyLendings.jsx'; 
+import UserReviews from './pages/UserReview.jsx';
 import logo from './assets/logo.png'
 import { AuthContext } from './context/AuthContext.jsx' 
 import ShowTransaction from './pages/ShowTransaction';
-
 
 export default function App() {
   const { user, logout } = useContext(AuthContext); // <-- get logout from context
@@ -90,7 +90,7 @@ export default function App() {
               <Button
                 variant="outline-secondary"
                 className="ms-2"
-                onClick={handleLogout} // <-- call logout directly
+                onClick={handleLogout}
               >
                 Logout
               </Button>
@@ -110,8 +110,8 @@ export default function App() {
         <Route path="/items/:id" element={<ShowItem />} />
         <Route path="/items/:id/edit" element={<EditItem />} />
         <Route path="/transactions/:id" element={<ShowTransaction />} />
+        <Route path="/users/:userId/reviews" element={<UserReviews />} />
       </Routes>
     </>
   );
 }
-
