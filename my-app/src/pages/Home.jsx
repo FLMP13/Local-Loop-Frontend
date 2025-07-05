@@ -8,6 +8,7 @@ import {
 import { AuthContext } from '../context/AuthContext.jsx'
 import Spinner from 'react-bootstrap/Spinner'
 import { FiSearch, FiMapPin } from 'react-icons/fi'     // search + pin icon
+import RatingDisplay from '../components/RatingDisplay';
 
 const categories = [
   '', 'Electronics','Furniture','Clothing',
@@ -190,10 +191,30 @@ export default function Home() {
                     </div>
                     <Card.Text className="mb-1">
                       <strong>Owner:</strong> {item.owner?.nickname || item.owner?.email || 'Unknown'}
+                      {item.owner?._id && (
+                        <div>
+                          <Link 
+                            to={`/users/${item.owner._id}/reviews`}
+                            className="text-decoration-none small"
+                          >
+                            View Reviews
+                          </Link>
+                        </div>
+                      )}
                     </Card.Text>
                     <Card.Text className="mb-2">
                       <strong>ZIP:</strong> {item.owner?.zipCode || 'Unknown'}
                     </Card.Text>
+                    {/* Add Owner Rating Display */}
+                    {item.owner?.lenderRating && (
+                      <Card.Text className="mb-2">
+                        <strong>Rating:</strong>{' '}
+                        <RatingDisplay 
+                          rating={item.owner.lenderRating.average} 
+                          count={item.owner.lenderRating.count} 
+                        />
+                      </Card.Text>
+                    )}
                     {user && item.distance !== undefined && item.distance !== null && (
                       <Card.Text>
                         <strong>Distance:</strong> {item.distance} km
