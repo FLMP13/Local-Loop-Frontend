@@ -11,7 +11,7 @@ export default function ShowItem() {
     const { item, loading, error, handleDelete } = useShowItem();
     const [selectedRange, setSelectedRange] = useState();
 
-    const handleRequestLend = async () => {
+    const handleRequestBorrow = async () => {
         if (!selectedRange?.from || !selectedRange?.to) return;
         try {
             const token = localStorage.getItem('token');
@@ -126,9 +126,9 @@ export default function ShowItem() {
                                     user && (
                                         <Button
                                             variant="secondary"
-                                            onClick={handleRequestLend}
+                                            onClick={handleRequestBorrow}
                                         >
-                                            Request to Lend
+                                            Request to Borrow
                                         </Button>
                                     )
                                 )}
