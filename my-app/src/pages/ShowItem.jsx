@@ -1,25 +1,29 @@
-import React, { useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext.jsx';
+import React, { useContext, useState } from 'react';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import { useShowItem } from '../hooks/useShowItem';
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import Card from 'react-bootstrap/Card';
-import Button from 'react-bootstrap/Button';
-import Alert from 'react-bootstrap/Alert';
-import axios from 'axios';
+import { AuthContext } from '../context/AuthContext.jsx';
+import { Link } from 'react-router-dom';
+import { Button, Card, Col, Container, Row, Alert } from 'react-bootstrap';
 
 export default function ShowItem() {
     const { user } = useContext(AuthContext);
-    const { item, error, loading, handleDelete } = useShowItem();
+    const { item, loading, error, handleDelete } = useShowItem();
+    const [selectedRange, setSelectedRange] = useState();
 
     const handleRequestLend = async () => {
+        if (!selectedRange?.from || !selectedRange?.to) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.post('/api/transactions/request', { itemId: item._id }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await axios.post(
+                '/api/transactions/request',
+                {
+                    itemId: item._id,
+                    requestedFrom: selectedRange.from.toISOString(),
+                    requestedTo: selectedRange.to.toISOString()
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
             alert('Request sent!');
         } catch (err) {
             alert(err.response?.data?.error || 'Failed to send request.');
@@ -33,6 +37,12 @@ export default function ShowItem() {
     if (loading) {
         return <p>Loading…</p>;
     }
+
+    // returns true for days that should be disabled
+    const disabledDays = day =>
+        !item.availability?.some(
+            ({ from, to }) => day >= new Date(from) && day <= new Date(to)
+        );
 
     return (
         <Container>
@@ -72,11 +82,27 @@ export default function ShowItem() {
                                     </Col>
                                 ))}
                             </Row>
+                            <Card.Title>Availability</Card.Title>
+                            <h3>Pick your lending dates</h3>
+                            <DayPicker
+                                mode="range"
+                                selected={selectedRange}
+                                onSelect={setSelectedRange}
+                                disabled={[disabledDays]}
+                            />
+                            {selectedRange?.from && selectedRange?.to && (
+                                <p>
+                                    You’ve chosen{' '}
+                                    {selectedRange.from.toLocaleDateString()} –{' '}
+                                    {selectedRange.to.toLocaleDateString()}.<br />
+                                    Weekly total: ${computeWeeklyCharge(selectedRange, item.price)}
+                                </p>
+                            )}
                             <div className="d-flex justify-content-between mt-4">
                                 <Button variant="secondary" onClick={() => window.history.back()}>
                                     Back
                                 </Button>
-                                
+
                                 {user?.id === item.owner?._id ? (
                                     // if item is owned by the user
                                     <div>
@@ -113,4 +139,10 @@ export default function ShowItem() {
             </Row>
         </Container>
     );
+}
+
+function computeWeeklyCharge({ from, to }, weeklyRate) {
+    const days = Math.ceil((to - from) / (1000 * 60 * 60 * 24)) + 1;
+    const weeks = Math.ceil(days / 7);
+    return weeks * weeklyRate;
 }

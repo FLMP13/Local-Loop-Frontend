@@ -1,30 +1,32 @@
-
 import React from 'react';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import { useEditItem } from '../hooks/useEditItem';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Alert from 'react-bootstrap/Alert';
 
-// Needs to be adapted to  categories
+// Needs to be adapted to categories
 const categories = [
   'Electronics','Furniture','Clothing',
   'Books','Sports','Toys','Tools','Other'
 ];
 
-// Function to edit an item by fetching its details, allowing the user to modify them, and then saving the changes
 export default function EditItem() {
   const {
     title,
     description,
     price,
     category,
+    availability,
     error,
     loading,
     handleTitleChange,
     handleDescriptionChange,
     handlePriceChange,
     handleCategoryChange,
+    handleAvailabilityChange,
     handleSubmit
   } = useEditItem();
 
@@ -56,6 +58,14 @@ export default function EditItem() {
             <option value="">Select…</option>
             {categories.map(c => <option key={c}>{c}</option>)}
           </Form.Select>
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Label>Availability</Form.Label>
+          <DayPicker
+            mode="range"
+            selected={availability}
+            onSelect={handleAvailabilityChange}
+          />
         </Form.Group>
         <Button type="submit">Save Changes</Button>
       </Form>
