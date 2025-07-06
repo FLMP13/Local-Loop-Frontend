@@ -14,7 +14,7 @@ export default function ShowItem() {
     const { user } = useContext(AuthContext);
     const { item, error, loading, handleDelete } = useShowItem();
 
-    const handleRequestLend = async () => {
+    const handleRequestBorrow = async () => {
         try {
             const token = localStorage.getItem('token');
             await axios.post('/api/transactions/request', { itemId: item._id }, {
@@ -53,6 +53,19 @@ export default function ShowItem() {
                             <Card.Title>Owner</Card.Title>
                             <Card.Text>
                                 {item.owner?.nickname || item.owner?.email || 'Unknown'}
+                                {item.owner?._id && (
+                                    <div className="mt-1">
+                                        <Button 
+                                            as={Link} 
+                                            to={`/users/${item.owner._id}/reviews`}
+                                            variant="link" 
+                                            size="sm"
+                                            className="p-0"
+                                        >
+                                            View Reviews
+                                        </Button>
+                                    </div>
+                                )}
                             </Card.Text>
 
                             <Card.Title>Zip Code</Card.Title>
@@ -100,9 +113,9 @@ export default function ShowItem() {
                                     user && (
                                         <Button
                                             variant="secondary"
-                                            onClick={handleRequestLend}
+                                            onClick={handleRequestBorrow}
                                         >
-                                            Request to Lend
+                                            Request to Borrow
                                         </Button>
                                     )
                                 )}
