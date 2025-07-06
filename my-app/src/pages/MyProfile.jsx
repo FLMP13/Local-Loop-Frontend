@@ -1,14 +1,15 @@
 // src/pages/MyProfile.jsx
 import React, { useState, useEffect, useContext, useRef } from 'react'         // add useRef
-import { Container, Form, Button, Alert, Row, Col, Image } from 'react-bootstrap' // import Row, Col, Image
+import { Container, Form, Button, Alert, Row, Col, Image, Card } from 'react-bootstrap' // import Row, Col, Image, Card
 import axios from 'axios'
-import { useNavigate } from 'react-router-dom' 
+import { useNavigate, Link } from 'react-router-dom' 
 import { AuthContext } from '../context/AuthContext.jsx'
+import RatingDisplay from '../components/RatingDisplay'
 
 //TODO: Profile pic persistence
 
 export default function MyProfile() {
-  const { logout } = useContext(AuthContext)
+  const { logout, user } = useContext(AuthContext)
   const navigate = useNavigate()
   const fileInputRef = useRef()                                                 // define ref
 
@@ -20,6 +21,8 @@ export default function MyProfile() {
     zipCode: '',
     bio: '',
     avatarUrl: '',
+    lenderRating: { average: 0, count: 0 },
+    borrowerRating: { average: 0, count: 0 }
   })
   const [avatarFile, setAvatarFile] = useState(null)
   const [passwords, setPasswords] = useState({
@@ -46,7 +49,9 @@ export default function MyProfile() {
          email,
          zipCode = '',
          bio = '',
-         profilePic
+         profilePic,
+         lenderRating = { average: 0, count: 0 },
+         borrowerRating = { average: 0, count: 0 }
        } = res.data
        setFormData({
          firstName,
@@ -57,7 +62,9 @@ export default function MyProfile() {
          bio,
          avatarUrl: profilePic
            ? '/api/users/me/avatar'   // stream existing picture
-           : ''                       // no pic yet
+           : '',                      // no pic yet
+         lenderRating,
+         borrowerRating
        })
       } catch (err) {
         console.error(err)
@@ -262,6 +269,43 @@ export default function MyProfile() {
           <Button variant="outline-secondary" onClick={handleLogout}>Log Out</Button>
         </div>
       </Form>
+
+      {/* Add Ratings Section */}
+      <Card className="mt-4">
+        <Card.Header className="d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">My Ratings</h5>
+          {user && (
+            <Button 
+              as={Link} 
+              to={`/users/${user.id}/reviews`} 
+              variant="outline-primary"
+              size="sm"
+            >
+              View All Reviews
+            </Button>
+          )}
+        </Card.Header>
+        <Card.Body>
+          <Row>
+            <Col md={6}>
+              <h6>As Lender</h6>
+              <RatingDisplay 
+                rating={formData.lenderRating?.average || 0} 
+                count={formData.lenderRating?.count || 0} 
+                size="lg"
+              />
+            </Col>
+            <Col md={6}>
+              <h6>As Borrower</h6>
+              <RatingDisplay 
+                rating={formData.borrowerRating?.average || 0} 
+                count={formData.borrowerRating?.count || 0} 
+                size="lg"
+              />
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
       <h2 className="mb-3">Change Password</h2>
       {pwError   && <Alert variant="danger">{pwError}</Alert>}

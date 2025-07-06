@@ -63,6 +63,19 @@ export default function ShowItem() {
                             <Card.Title>Owner</Card.Title>
                             <Card.Text>
                                 {item.owner?.nickname || item.owner?.email || 'Unknown'}
+                                {item.owner?._id && (
+                                    <div className="mt-1">
+                                        <Button 
+                                            as={Link} 
+                                            to={`/users/${item.owner._id}/reviews`}
+                                            variant="link" 
+                                            size="sm"
+                                            className="p-0"
+                                        >
+                                            View Reviews
+                                        </Button>
+                                    </div>
+                                )}
                             </Card.Text>
 
                             <Card.Title>Zip Code</Card.Title>
