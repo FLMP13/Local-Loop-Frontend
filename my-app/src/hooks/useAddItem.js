@@ -13,6 +13,7 @@ export function useAddItem() {
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [error, setError] = useState('');
+  const [availability, setAvailability] = useState();
 
   const handleTitleChange = e => setTitle(e.target.value);
   const handleDescriptionChange = e => setDescription(e.target.value);
@@ -25,6 +26,10 @@ export function useAddItem() {
     setImagePreviews(files.map(file => URL.createObjectURL(file)));
   };
 
+  const handleAvailabilityChange = range => {
+    setAvailability(range);
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     try {
@@ -33,18 +38,26 @@ export function useAddItem() {
       formData.append('description', description);
       formData.append('price', parseFloat(price));
       formData.append('category', category);
-      images.forEach(image => formData.append('images', image));
+      images.forEach(img => formData.append('images', img));
+
+      if (availability?.from && availability?.to) {
+        formData.append(
+          'availability',
+          JSON.stringify({
+            from: availability.from.toISOString(),
+            to:   availability.to.toISOString()
+          })
+        );
+      }
 
       await axios.post('/api/items', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`
         }
       });
-
       navigate('/');
     } catch (err) {
-      console.error('Error adding item in hook:', err);
+      console.error('Error adding item in hook:', err.response?.data || err);
       setError('Failed to add item. Please try again.');
     }
   };
@@ -58,11 +71,13 @@ export function useAddItem() {
     images,
     imagePreviews,
     error,
+    availability,
     handleTitleChange,
     handleDescriptionChange,
     handlePriceChange,
     handleCategoryChange,
     handleImageChange,
+    handleAvailabilityChange,
     handleSubmit
   };
 }
