@@ -1,7 +1,7 @@
 //  Top Level Layout Component including navigation and routes
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css'
-import React, { useContext } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { BrowserRouter as Router } from 'react-router-dom';
 import Container from 'react-bootstrap/Container';
@@ -25,9 +25,61 @@ import logo from './assets/logo.png'
 import { AuthContext } from './context/AuthContext.jsx' 
 import ShowTransaction from './pages/ShowTransaction';
 
+function NotificationBubble({ count }) {
+  if (!count || count < 1) return null;
+  return (
+    <span style={{
+      background: 'red',
+      color: 'white',
+      borderRadius: '50%',
+      width: '1.7em',
+      height: '1.7em',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '0.9em',
+      position: 'absolute',
+      top: '-10px',
+      right: '-18px', // move further right
+      zIndex: 2,
+      fontWeight: 'bold',
+      boxShadow: '0 0 0 2px #fff7dc'
+    }}>
+      {count}
+    </span>
+  );
+}
+
 export default function App() {
-  const { user, logout } = useContext(AuthContext); // <-- get logout from context
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // Notification counts
+  const [borrowingsCount, setBorrowingsCount] = useState(0);
+  const [lendingsCount, setLendingsCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) {
+      setBorrowingsCount(0);
+      setLendingsCount(0);
+      return;
+    }
+    const fetchCounts = async () => {
+      const token = localStorage.getItem('token');
+      // Fetch all borrowings and lendings
+      const [borrowingsRes, lendingsRes] = await Promise.all([
+        fetch('/api/transactions/borrowings', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/transactions/lendings', { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      const borrowings = borrowingsRes.ok ? await borrowingsRes.json() : [];
+      const lendings = lendingsRes.ok ? await lendingsRes.json() : [];
+      // Define open statuses (customize as needed)
+      const openStatuses = ['requested', 'accepted', 'renegotiation_requested', 'borrowed', 'returned'];
+      setBorrowingsCount(borrowings.filter(t => openStatuses.includes(t.status)).length);
+      setLendingsCount(lendings.filter(t => openStatuses.includes(t.status)).length);
+    };
+    fetchCounts();
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -46,26 +98,61 @@ export default function App() {
               className="d-inline-block align-top"
             />
           </Navbar.Brand>
+          <Button
+            as={Link}
+            to="/"
+            variant="outline-primary"
+            className="ms-2 me-2"
+            style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
+          >
+            Browse Items
+          </Button>
           <Nav className="me-auto">
             <ButtonGroup>
-              <NavDropdown
-                title="My Items"
-                id="my-items-dropdown"
-                as={Button}
-                variant="outline-primary"
-                className="me-2"
-                style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
-              >
-                <NavDropdown.Item as={Link} to="/my-items">
-                  All My Items
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/my-borrowings">
-                  My Borrowings
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/my-lendings">
-                  My Lendings
-                </NavDropdown.Item>
-              </NavDropdown>
+              {user ? (
+                <NavDropdown
+                  title={
+                    <span style={{ position: 'relative', display: 'inline-block', paddingRight: '2.7em' }}>
+                      My Items
+                      <span style={{
+                        position: 'absolute',
+                        top: '-0.3em',
+                        right: '-1em',
+                        pointerEvents: 'none'
+                      }}>
+                        <NotificationBubble count={borrowingsCount + lendingsCount} />
+                      </span>
+                    </span>
+                  }
+                  id="my-items-dropdown"
+                  as={Button}
+                  variant="outline-primary"
+                  className="me-2"
+                  style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
+                >
+                  <NavDropdown.Item as={Link} to="/my-items">
+                    My Items
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={Link} to="/my-borrowings" style={{ position: 'relative' }}>
+                    My Borrowings
+                    <NotificationBubble count={borrowingsCount} />
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={Link} to="/my-lendings" style={{ position: 'relative' }}>
+                    My Lendings
+                    <NotificationBubble count={lendingsCount} />
+                  </NavDropdown.Item>
+                </NavDropdown>
+              ) : (
+                <Button
+                  as={Link}
+                  to="/my-items"
+                  variant="outline-primary"
+                  className="me-2"
+                  style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd', height: '100%' }}
+                >
+                  My Items
+                </Button>
+              )}
               <Button
                 as={Link}
                 to="/add-item"

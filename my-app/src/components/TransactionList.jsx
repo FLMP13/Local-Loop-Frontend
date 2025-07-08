@@ -6,6 +6,18 @@ import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
 import { Link } from 'react-router-dom';
 import SimpleFilter from './SimpleFilter';
+import { STATUS_COLORS } from './StatusColors';
+import Badge from 'react-bootstrap/Badge';
+
+function StatusBadge({ status }) {
+  const color = STATUS_COLORS[status] || 'secondary';
+  const label = status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
+  return (
+    <Badge bg={color} style={{ fontSize: '1rem', padding: '0.5em 1em' }}>
+      {label}
+    </Badge>
+  );
+}
 
 export default function TransactionList({ endpoint, title }) {
   const { user } = useContext(AuthContext);
@@ -35,9 +47,54 @@ export default function TransactionList({ endpoint, title }) {
     fetchTransactions();
   }, [endpoint]);
 
-  const filteredTransactions = transactions.filter(tx => 
-    filter === '' || tx.status === filter
-  );
+  function getStatusPriority(transaction, userId) {
+    // Lower number = higher priority (top of list)
+    if (transaction.status === 'requested') return 0;
+    if (transaction.status === 'renegotiation_requested') return 1;
+    if (transaction.status === 'accepted' || transaction.status === 'borrowed' || transaction.status === 'returned') return 2;
+    if (transaction.status === 'rejected' || transaction.status === 'declined') return 3;
+    if (transaction.status === 'completed') return 4;
+    return 5; // Unknown status
+  }
+
+  function filterAndSortTransactions(transactions, filter, userId) {
+    let filtered = transactions.filter(t => {
+      // Status filter
+      if (filter.status && t.status !== filter.status) return false;
+      // Max price filter
+      if (filter.maxPrice && t.item?.price > Number(filter.maxPrice)) return false;
+      // Name/description/username filter
+      if (filter.name) {
+        const search = filter.name.toLowerCase();
+        const fields = [
+          t.item?.title,
+          t.item?.description,
+          t.lender?.nickname,
+          t.lender?.email,
+          t.borrower?.nickname,
+          t.borrower?.email,
+        ].filter(Boolean).map(s => s.toLowerCase());
+        if (!fields.some(f => f.includes(search))) return false;
+      }
+      return true;
+    });
+
+    // Sort by action priority, then by date
+    filtered = filtered.sort((a, b) => {
+      const pa = getStatusPriority(a, userId);
+      const pb = getStatusPriority(b, userId);
+      if (pa !== pb) return pa - pb;
+      if (filter.sortBy === 'date_asc') {
+        return new Date(a.requestDate) - new Date(b.requestDate);
+      }
+      // Default: newest first
+      return new Date(b.requestDate) - new Date(a.requestDate);
+    });
+
+    return filtered;
+  }
+
+  const filteredTransactions = filterAndSortTransactions(transactions, filter, user.id);
 
   if (error) {
     return (
@@ -93,7 +150,7 @@ export default function TransactionList({ endpoint, title }) {
                   <div>
                     <Card.Title>{itemTitle}</Card.Title>
                     <Card.Text>
-                      Status: {tx.status || 'Unknown'}<br />
+                      <StatusBadge status={tx.status} /><br />
                       Borrower: {borrowerName}<br />
                       Lender: {lenderName}<br />
                       Requested: {requestDate}

@@ -9,7 +9,7 @@ export default function SimpleFilter({ filter, setFilter, statusOptions }) {
       <Row className="g-2">
         <Col md>
           <Form.Control
-            placeholder="Name"
+            placeholder="Name, Description, or Username"
             value={filter.name}
             onChange={e => setFilter(f => ({ ...f, name: e.target.value }))}
           />
@@ -30,11 +30,20 @@ export default function SimpleFilter({ filter, setFilter, statusOptions }) {
             >
               <option value="">All Statuses</option>
               {statusOptions.map(s => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ')}</option>
               ))}
             </Form.Select>
           </Col>
         )}
+        <Col md>
+          <Form.Select
+            value={filter.sortBy || 'date_desc'}
+            onChange={e => setFilter(f => ({ ...f, sortBy: e.target.value }))}
+          >
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+          </Form.Select>
+        </Col>
       </Row>
     </Form>
   );

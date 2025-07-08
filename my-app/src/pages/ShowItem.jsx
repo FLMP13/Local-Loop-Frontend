@@ -5,6 +5,7 @@ import { useShowItem } from '../hooks/useShowItem';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { Link } from 'react-router-dom';
 import { Button, Card, Col, Container, Row, Alert } from 'react-bootstrap';
+import axios from 'axios';
 
 export default function ShowItem() {
     const { user } = useContext(AuthContext);
