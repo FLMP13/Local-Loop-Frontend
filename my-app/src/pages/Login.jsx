@@ -26,9 +26,11 @@ export default function Login() {
       login({
         token: res.data.token,
         user: {
-          id:       res.data.user.id,
-          nickname: res.data.user.nickname,
-          email:    res.data.user.email,
+          id:         res.data.user.id,
+          firstName:  res.data.user.firstName,
+          lastName:   res.data.user.lastName,
+          nickname:   res.data.user.nickname,
+          email:      res.data.user.email,
           profilePic: res.data.user.profilePic
         }
       })

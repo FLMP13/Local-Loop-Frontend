@@ -1,0 +1,166 @@
+import React, { useState, useEffect, useContext } from "react";
+import { Container, Row, Col, Form, Button, Card, Alert } from "react-bootstrap";
+import { useNavigate, useParams } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext"; // Import AuthContext to access user and token
+import axios from "axios";
+import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
+//import { set } from "mongoose";
+
+export default function Payment() {
+  const { id } = useParams(); //get the transaction ID from the URL
+  const [clientId, setClientId] = useState(null);
+  const [error, setError] = useState(null);
+  const { user } = useContext(AuthContext); // Access user from AuthContext
+  const navigate = useNavigate(); // Use navigate to redirect after payment
+  const [transactionSummary, setTransactionSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPaymentData = async () => {
+      try {
+        //Fetch PayPal configuration from the backend
+        const response = await axios.get("/api/config/paypal");
+        console.log("PayPal config response:", response.data);
+        setClientId(response.data.clientId);
+
+        // Debug: Check what's in the user object
+        console.log("User from AuthContext:", user);
+
+        if (id) {
+          const token = localStorage.getItem("token");
+          const summaryResponse = await axios.get(
+            `/api/transactions/${id}/summary`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setTransactionSummary(summaryResponse.data);
+        }
+      } catch (error) {
+        console.error("Error fetching PayPal configuration:", error);
+        setError(error.response?.data?.error || "Failed to load payment data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPaymentData();
+  }, [id]);
+  if (loading) return <p>Loading...</p>;
+  if (error) return <Alert variant="danger">Error: {error}</Alert>;
+  if (!clientId) return <p>Loading PayPal...</p>;
+
+  return (
+    <Container className="mt-5">
+      <div className="checkout-page">
+        <h1>Complete Your Payment</h1>
+        {transactionSummary ? (
+          <p>
+            {user?.firstName || 'User'}, your request to borrow <strong>{transactionSummary.itemTitle}</strong> from {transactionSummary.lender} has
+            been accepted. Please provide payment details to proceed.
+          </p>
+        ) : (
+          <p>
+            {user?.firstName || 'User'}, your request to borrow an item has been accepted.
+            Please provide payment details to proceed.
+          </p>
+        )}
+        <Row className="justify-content-center">
+          <Col md={6}>
+            <Form>
+              <PayPalScriptProvider
+                options={{ "client-id": clientId, currency: "EUR" }}
+              >
+                <PayPalButtons
+                  style={{ layout: "vertical" }}
+                  createOrder={(data, actions) => {
+                    const amount = transactionSummary.itemPrice || "9.99"; // Fallback amount if not available
+                    console.log("Creating order with amount:", amount);
+                    return actions.order.create({
+                      purchase_units: [
+                        {
+                          amount: {
+                            value: amount.toString(), // Ensure amount is a string
+                          },
+                        },
+                      ],
+                    });
+                  }}
+                  onApprove={async (data, actions) => {
+                    try {
+                      const details = await actions.order.capture();
+                      console.log('Payment successful:', details);
+                      
+                      // Update transaction status to 'borrowed'
+                      const token = localStorage.getItem("token");
+                      await axios.patch(
+                        `/api/transactions/${id}/complete-payment`,
+                        {},
+                        {
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        }
+                      );
+
+                      alert(`Zahlung erfolgreich! Status: Borrowed`);
+                      navigate(`/payment-success/${id}`);
+                    } catch (error) {
+                      console.error('Error:', error);
+                      alert('Zahlung erfolgreich!');
+                      navigate("/"); // Redirect to success page
+                    }
+                  }}
+                  onError={(err) => {
+                    console.error("PayPal Fehler:", err);
+                  }}
+                />
+              </PayPalScriptProvider>
+            </Form>
+          </Col>
+          {/* Right side summary*/}
+          <Col md={4}>
+            <Card className="mt-3">
+              <Card.Body>
+                {transactionSummary ? (
+                  <>
+                    <div
+                      className="rounded-circle bg-dark text-white d-flex justify-content-center align-items-center"
+                      style={{ width: 50, height: 50 }}
+                    >
+                      <strong>
+                        {transactionSummary.lender.split(' ').map(name => name[0]).join('')}
+                      </strong>
+                    </div>
+                    <Card.Title>{transactionSummary.lender}</Card.Title>
+                    <Card.Text>
+                      <strong>Item:</strong> {transactionSummary.itemTitle}
+                    </Card.Text>
+                    <Card.Text>
+                      <strong>Price:</strong> €{transactionSummary.itemPrice}
+                    </Card.Text>
+                    <Card.Text>
+                      <strong>Status:</strong> {transactionSummary.status}
+                    </Card.Text>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      className="rounded-circle bg-dark text-white d-flex justify-content-center align-items-center"
+                      style={{ width: 50, height: 50 }}
+                    >
+                      <strong>--</strong>
+                    </div>
+                    <Card.Title>Loading...</Card.Title>
+                    <Card.Text>Loading transaction details...</Card.Text>
+                  </>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    </Container>
+  );
+}
