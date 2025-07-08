@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Form from 'react-bootstrap/Form';
@@ -9,6 +8,8 @@ import Col from 'react-bootstrap/Col';
 import Alert from 'react-bootstrap/Alert';
 import Image from 'react-bootstrap/Image';
 import Card from 'react-bootstrap/Card';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import { useAddItem } from '../hooks/useAddItem';
 
 const categories = [
@@ -33,11 +34,13 @@ export default function AddItem() {
         images,
         imagePreviews,
         error,
+        availability,
         handleTitleChange,
         handleDescriptionChange,
         handlePriceChange,
         handleCategoryChange,
         handleImageChange,
+        handleAvailabilityChange,
         handleSubmit
     } = useAddItem();
  
@@ -128,6 +131,14 @@ export default function AddItem() {
                                             </Col>
                                         ))}
                                     </Row>
+                                </Form.Group>
+                                <Form.Group controlId="formAvailability" className="mb-3">
+                                    <Form.Label>Availability</Form.Label>
+                                    <DayPicker
+                                        mode="range"
+                                        selected={availability}
+                                        onSelect={handleAvailabilityChange}
+                                    />
                                 </Form.Group>
                                 <div className="d-grid">
                                     <Button variant="primary" type="submit" size="lg">

@@ -11,6 +11,7 @@ export function useEditItem() {
   const [category, setCategory] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [availability, setAvailability] = useState([]);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -21,6 +22,7 @@ export function useEditItem() {
         setDescription(it.description);
         setPrice(it.price);
         setCategory(it.category);
+        setAvailability(it.availability || []);
       } catch (e) {
         setError('Failed to load item');
       } finally {
@@ -34,15 +36,21 @@ export function useEditItem() {
   const handleDescriptionChange = e => setDescription(e.target.value);
   const handlePriceChange = e => setPrice(e.target.value);
   const handleCategoryChange = e => setCategory(e.target.value);
+  const handleAvailabilityChange = ranges => {
+    setAvailability(ranges);
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
-    try {
-      await axios.put(`/api/items/${id}`, { title, description, price, category });
-      navigate(`/items/${id}`);
-    } catch {
-      setError('Update failed');
-    }
+    const updated = {
+      title,
+      description,
+      price,
+      category,
+      availability
+    };
+    await axios.put(`/api/items/${id}`, updated);
+    navigate('/');
   };
 
   return {
@@ -52,10 +60,12 @@ export function useEditItem() {
     category,
     error,
     loading,
+    availability,
     handleTitleChange,
     handleDescriptionChange,
     handlePriceChange,
     handleCategoryChange,
+    handleAvailabilityChange,
     handleSubmit
   };
 }
