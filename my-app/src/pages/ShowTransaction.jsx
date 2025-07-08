@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { CounterContext } from '../App.jsx';
 import Container from 'react-bootstrap/Container';
 import Card from 'react-bootstrap/Card';
 import Row from 'react-bootstrap/Row';
@@ -12,14 +13,18 @@ import ReviewModal from '../components/ReviewModal';
 import axios from 'axios';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
+import Modal from 'react-bootstrap/Modal';
 
 const STATUS_COLORS = {
   requested: 'secondary',
   accepted: 'success',
   rejected: 'danger',
-  'renegotiation_requested': 'warning',
-  completed: 'primary',
-};
+  borrowed: 'info',
+  returned: 'primary',
+  completed: 'dark',
+  renegotiation_requested: 'warning',
+  retracted: 'secondary'
+}; // should match the colors in TransactionList.jsx
 
 function StatusBadge({ status }) {
   const color = STATUS_COLORS[status] || 'secondary';
@@ -40,6 +45,7 @@ function StatusBadge({ status }) {
 export default function ShowTransaction() {
   const { id } = useParams();
   const { user } = useContext(AuthContext);
+  const { fetchCounts } = useContext(CounterContext);
   const [transaction, setTransaction] = useState(null);
   const [error, setError] = useState('');
   const [showError, setShowError] = useState(false);
@@ -48,6 +54,11 @@ export default function ShowTransaction() {
   const [canReview, setCanReview] = useState({ canReview: false, role: null });
   const [renegotiateRange, setRenegotiateRange] = useState();
   const [showRenegotiateForm, setShowRenegotiateForm] = useState(null);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnCode, setReturnCode] = useState('');
+  const [lenderCode, setLenderCode] = useState('');
+  const [returnError, setReturnError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -211,6 +222,90 @@ export default function ShowTransaction() {
     }
   };
 
+  const handleDeleteClick = async () => {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/transactions/${transaction._id}/retract`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchCounts(); // <-- update counters after retract
+      navigate(-1);
+    } catch (err) {
+      setError('Failed to delete transaction.');
+      setShowError(true);
+    }
+  };
+
+  const handleGetReturnCode = async () => {
+    setReturnError('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/transactions/${transaction._id}/return-code`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLenderCode(data.code);
+      } else {
+        setReturnError(data.error || 'Failed to get code');
+      }
+    } catch (err) {
+      setReturnError('Failed to get code');
+    }
+  };
+
+  const handleSubmitReturnCode = async () => {
+    setReturnError('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/transactions/${transaction._id}/return-code`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code: returnCode })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Redirect to the other user's review page
+        const otherUserId = user.id === transaction.lender._id
+          ? transaction.borrower._id
+          : transaction.lender._id;
+        navigate(`/users/${otherUserId}/reviews`);
+      } else {
+        setReturnError(data.error || 'Incorrect code');
+      }
+    } catch (err) {
+      setReturnError('Failed to submit code');
+    }
+  };
+
+  const handleForceComplete = async () => {
+    setReturnError('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/transactions/${transaction._id}/return-complete`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        // Redirect to the other user's review page
+        const otherUserId = user.id === transaction.lender._id
+          ? transaction.borrower._id
+          : transaction.lender._id;
+        navigate(`/users/${otherUserId}/reviews`);
+      } else {
+        setReturnError('Failed to complete return');
+      }
+    } catch (err) {
+      setReturnError('Failed to complete return');
+    }
+  };
+
   if (error) return <Alert variant="danger">{error}</Alert>;
   if (!transaction) return <p>Loading…</p>;
 
@@ -314,39 +409,53 @@ export default function ShowTransaction() {
                 </div>
               );
             }
+            // Borrower: Edit/Delete for requested or renegotiation_requested
+            if (
+              user?.id === transaction.borrower?._id &&
+              ['requested', 'renegotiation_requested'].includes(transaction.status)
+            ) {
+              return (
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                  <Button variant="secondary" onClick={() => navigate(`/transactions/${transaction._id}/edit`)}>Edit</Button>
+                  <Button variant="danger" onClick={handleDeleteClick}>Delete</Button>
+                </div>
+              );
+            }
+            // Borrower: Pay button for accepted
+            if (
+              user?.id === transaction.borrower?._id &&
+              transaction.status === 'accepted'
+            ) {
+              return (
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                  <Button
+                    variant="primary"
+                    onClick={() => alert('Payment coming soon!')}
+                  >
+                    Pay
+                  </Button>
+                </div>
+              );
+            }
+            // Lender: Mark as Returned if borrowed
+            if (
+              (user?.id === transaction.lender?._id || user?.id === transaction.borrower?._id) &&
+              transaction.status === 'borrowed'
+            ) {
+              return (
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                  <Button
+                    variant="success"
+                    onClick={() => setShowReturnModal(true)}
+                    disabled={updating}
+                  >
+                    Mark as Returned
+                  </Button>
+                </div>
+              );
+            }
             return null;
           })()}
-
-          {/* Edit/Delete for both parties if requested */}
-          {(transaction.status === 'requested' && (user?.id === transaction.lender?._id || user?.id === transaction.borrower?._id)) && (
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button variant="secondary" disabled>Edit</Button>
-              <Button variant="danger" disabled>Delete</Button>
-            </div>
-          )}
-
-          {/* Pay/Mark as Returned if accepted */}
-          {transaction.status === 'accepted' && (
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              {user?.id === transaction.borrower?._id && (
-                <Button
-                  variant="primary"
-                  onClick={() => alert('Payment coming soon!')}
-                >
-                  Pay
-                </Button>
-              )}
-              {user?.id === transaction.lender?._id && (
-                <Button
-                  variant="success"
-                  disabled={updating}
-                  onClick={handleCompleteTransaction}
-                >
-                  Mark as Returned
-                </Button>
-              )}
-            </div>
-          )}
 
           {/* Add Review Button */}
           {canReview.canReview && (
@@ -412,7 +521,15 @@ export default function ShowTransaction() {
               <strong>Description:</strong> {item.description}<br />
               <strong>Price:</strong> ${item.price}<br />
               <strong>Category:</strong> {item.category}<br />
-              <strong>Owner:</strong> {item.owner?.nickname || item.owner?.email}<br />
+              <strong>Owner:</strong>{' '}
+              {item.owner?._id ? (
+                <Link to={`/users/${item.owner._id}/reviews`}>
+                  {item.owner.nickname || item.owner.email}
+                </Link>
+              ) : (
+                item.owner?.nickname || item.owner?.email
+              )}
+              <br />
               <strong>Zip Code:</strong> {item.owner?.zipCode}<br />
             </Card.Text>
             <Row>
@@ -433,6 +550,34 @@ export default function ShowTransaction() {
         </Card>
       )}
 
+      {/* View Reviews Buttons */}
+      {user && transaction && (
+        <div className="d-flex justify-content-end mt-3">
+          {user.id === transaction.lender?._id && transaction.borrower?._id && (
+            <Button
+              as={Link}
+              to={`/users/${transaction.borrower._id}/reviews`}
+              variant="outline-primary"
+              size="sm"
+              className="me-2"
+            >
+              View Borrower Reviews
+            </Button>
+          )}
+          {user.id === transaction.borrower?._id && transaction.lender?._id && (
+            <Button
+              as={Link}
+              to={`/users/${transaction.lender._id}/reviews`}
+              variant="outline-primary"
+              size="sm"
+              className="me-2"
+            >
+              View Lender Reviews
+            </Button>
+          )}
+        </div>
+      )}
+
       <ReviewModal
         show={showReviewModal}
         onHide={() => setShowReviewModal(false)}
@@ -440,6 +585,36 @@ export default function ShowTransaction() {
         userRole={canReview.role}
         onReviewSubmitted={handleReviewSubmitted}
       />
+
+      {/* Return Code Modal */}
+      <Modal show={showReturnModal} onHide={() => setShowReturnModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Mark as Returned</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {user?.id === transaction.lender?._id && (
+            <>
+              <p>Give this code to the borrower:</p>
+              <Button onClick={handleGetReturnCode} variant="info" className="mb-2">Generate/View Code</Button>
+              {lenderCode && <div className="alert alert-success">Return Code: <strong>{lenderCode}</strong></div>}
+              <Button onClick={handleForceComplete} variant="danger" className="mt-2">Accept Return Without Code</Button>
+            </>
+          )}
+          {user?.id === transaction.borrower?._id && (
+            <>
+              <p>Enter the code you received from the lender:</p>
+              <input
+                type="text"
+                value={returnCode}
+                onChange={e => setReturnCode(e.target.value)}
+                className="form-control mb-2"
+              />
+              <Button onClick={handleSubmitReturnCode} variant="success">Submit Code</Button>
+            </>
+          )}
+          {returnError && <div className="alert alert-danger mt-2">{returnError}</div>}
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 }

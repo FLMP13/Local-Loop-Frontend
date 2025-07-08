@@ -50,9 +50,24 @@ body {
 }
 
 .btn-outline-primary:hover,
-.btn-outline-primary:focus {
+.btn-outline-primary:focus,
+.show > .btn-outline-primary.dropdown-toggle,
+.btn-outline-primary[aria-expanded="true"],
+.dropdown-toggle:hover,
+.dropdown-toggle:focus {
   background-color: var(--brand) !important;
   color: #fff !important;
+  border-color: var(--brand-dark) !important;
+}
+
+/* Fix for dropdown-toggle text color on open/hover/focus */
+.show > .dropdown-toggle,
+.btn-outline-primary.show,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.dropdown-toggle:focus {
+  color: #fff !important;
+  background-color: var(--brand) !important;
   border-color: var(--brand-dark) !important;
 }
 

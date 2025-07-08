@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { useShowItem } from '../hooks/useShowItem';
@@ -11,6 +11,21 @@ export default function ShowItem() {
     const { user } = useContext(AuthContext);
     const { item, loading, error, handleDelete } = useShowItem();
     const [selectedRange, setSelectedRange] = useState();
+    const [unavailableRanges, setUnavailableRanges] = useState([]);
+
+    useEffect(() => {
+        const fetchUnavailable = async () => {
+            const res = await fetch(`/api/items/${item._id}/unavailable`);
+            if (res.ok) {
+                const data = await res.json();
+                setUnavailableRanges(data.map(r => ({
+                    from: new Date(r.from),
+                    to: new Date(r.to)
+                })));
+            }
+        };
+        fetchUnavailable();
+    }, [item._id]);
 
     const handleRequestBorrow = async () => {
         if (!selectedRange?.from || !selectedRange?.to) return;
@@ -102,7 +117,7 @@ export default function ShowItem() {
                                 mode="range"
                                 selected={selectedRange}
                                 onSelect={setSelectedRange}
-                                disabled={[disabledDays]}
+                                disabled={[disabledDays, ...unavailableRanges]}
                             />
                             {selectedRange?.from && selectedRange?.to && (
                                 <p>

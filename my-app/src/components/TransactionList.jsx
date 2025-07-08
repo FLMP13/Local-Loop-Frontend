@@ -4,10 +4,20 @@ import Alert from 'react-bootstrap/Alert';
 import Card from 'react-bootstrap/Card';
 import Container from 'react-bootstrap/Container';
 import Button from 'react-bootstrap/Button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import SimpleFilter from './SimpleFilter';
-import { STATUS_COLORS } from './StatusColors';
 import Badge from 'react-bootstrap/Badge';
+
+const STATUS_COLORS = {
+  requested: 'secondary',
+  accepted: 'success',
+  rejected: 'danger',
+  borrowed: 'info',
+  returned: 'primary',
+  completed: 'dark',
+  renegotiation_requested: 'warning',
+  retracted: 'secondary'
+}; // should match the colors in ShowTransaction.jsx
 
 function StatusBadge({ status }) {
   const color = STATUS_COLORS[status] || 'secondary';
@@ -19,11 +29,12 @@ function StatusBadge({ status }) {
   );
 }
 
-export default function TransactionList({ endpoint, title }) {
+export default function TransactionList({ endpoint, title, statusOptions, onTransactionChange }) {
   const { user } = useContext(AuthContext);
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -110,7 +121,7 @@ export default function TransactionList({ endpoint, title }) {
       <SimpleFilter 
         filter={filter} 
         setFilter={setFilter} 
-        statusOptions={['requested','accepted','rejected','completed']} 
+        statusOptions={statusOptions} 
       />
       
       {filteredTransactions.length === 0 ? (
@@ -143,8 +154,16 @@ export default function TransactionList({ endpoint, title }) {
             cardText = 'text-white';
           }
 
+          const allowedStates = ['requested', 'renegotiation_requested'];
+          const isForbidden = !allowedStates.includes(tx.status);
+
           return (
-            <Card key={tx._id} className={`mb-3 ${cardText} ${cardBg}`}>
+            <Card
+              key={tx._id}
+              className={`mb-3 ${cardText} ${cardBg} ${tx.status === 'retracted' ? 'text-muted bg-light' : ''}`}
+              style={tx.status === 'retracted' ? { opacity: 0.6, cursor: 'pointer' } : { cursor: 'pointer' }}
+              onClick={() => navigate(`/transactions/${tx._id}`)}
+            >
               <Card.Body>
                 <div className="d-flex justify-content-between align-items-start">
                   <div>
@@ -157,15 +176,6 @@ export default function TransactionList({ endpoint, title }) {
                     </Card.Text>
                   </div>
                   <div className="text-end">
-                    <Button 
-                      as={Link} 
-                      to={`/transactions/${tx._id}`}
-                      variant={cardBg ? 'light' : 'primary'}
-                      size="sm"
-                      className="mb-2"
-                    >
-                      View Details
-                    </Button>
                     {/* Add review links for completed transactions */}
                     {tx.status === 'completed' && (
                       <div>
@@ -193,6 +203,49 @@ export default function TransactionList({ endpoint, title }) {
                         )}
                       </div>
                     )}
+                    <div className="mt-2 d-flex gap-2">
+                      <Button
+                        as={Link}
+                        to={`/transactions/edit/${tx._id}`}
+                        variant="outline-primary"
+                        size="sm"
+                        className={`fw-bold ${isForbidden ? 'disabled text-muted border-secondary' : ''}`}
+                        disabled={isForbidden}
+                        style={{ minWidth: 70 }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        onClick={async e => {
+                          e.stopPropagation();
+                          if (isForbidden) return;
+                          if (window.confirm('Are you sure you want to delete this transaction?')) {
+                            try {
+                              const token = localStorage.getItem('token');
+                              await fetch(`/api/transactions/${tx._id}/retract`, {
+                                method: 'PATCH',
+                                headers: { Authorization: `Bearer ${token}` }
+                              });
+                              setTransactions(transactions.map(t =>
+                                t._id === tx._id ? { ...t, status: 'retracted' } : t
+                              ));
+                              alert('Transaction deleted successfully.');
+                            } catch (err) {
+                              console.error('Error deleting transaction:', err);
+                              alert('Failed to delete transaction.');
+                            }
+                          }
+                        }}
+                        variant="outline-danger"
+                        size="sm"
+                        className={`fw-bold ${isForbidden ? 'disabled text-muted border-secondary' : ''}`}
+                        disabled={isForbidden}
+                        style={{ minWidth: 70 }}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card.Body>

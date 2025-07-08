@@ -9,6 +9,7 @@ const STATUS_OPTIONS = [
   'returned',
   'completed',
   'renegotiation_requested',
+  'retracted'
 ];
 
 export default function MyLendings() {
