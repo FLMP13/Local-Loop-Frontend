@@ -3,7 +3,12 @@ import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 
-export default function SimpleFilter({ filter, setFilter, statusOptions }) {
+const statusOptions = [
+  'requested', 'accepted', 'paid', 'rejected', 'borrowed',
+  'returned', 'completed', 'renegotiation_requested', 'retracted'
+];
+
+export default function SimpleFilter({ filter, setFilter }) {
   return (
     <Form className="mb-3">
       <Row className="g-2">

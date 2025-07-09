@@ -14,6 +14,7 @@ export default function ShowItem() {
     const [unavailableRanges, setUnavailableRanges] = useState([]);
 
     useEffect(() => {
+        if (!item || !item._id) return; // <-- Add this guard!
         const fetchUnavailable = async () => {
             const res = await fetch(`/api/items/${item._id}/unavailable`);
             if (res.ok) {
@@ -25,10 +26,13 @@ export default function ShowItem() {
             }
         };
         fetchUnavailable();
-    }, [item._id]);
+    }, [item?._id]);
 
     const handleRequestBorrow = async () => {
-        if (!selectedRange?.from || !selectedRange?.to) return;
+        if (!selectedRange?.from || !selectedRange?.to) {
+            alert('Please select a valid date range.');
+            return;
+        }
         try {
             const token = localStorage.getItem('token');
             await axios.post(
@@ -154,7 +158,7 @@ export default function ShowItem() {
                                     // if item is not owned by the user
                                     user && (
                                         <Button
-                                            variant="secondary"
+                                            variant="success"
                                             onClick={handleRequestBorrow}
                                         >
                                             Request to Borrow

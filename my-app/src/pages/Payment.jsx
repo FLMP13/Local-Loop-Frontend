@@ -91,25 +91,35 @@ export default function Payment() {
                     try {
                       const details = await actions.order.capture();
                       console.log('Payment successful:', details);
-                      
-                      // Update transaction status to 'borrowed'
+
                       const token = localStorage.getItem("token");
-                      await axios.patch(
+                      // PATCH: complete-payment
+                      const paymentRes = await axios.patch(
                         `/api/transactions/${id}/complete-payment`,
                         {},
-                        {
-                          headers: {
-                            Authorization: `Bearer ${token}`,
-                          },
-                        }
+                        { headers: { Authorization: `Bearer ${token}` } }
                       );
+                      if (paymentRes.status !== 200) throw new Error('Payment update failed');
 
-                      alert(`Zahlung erfolgreich! Status: Borrowed`);
+                      // PATCH: pickup-code (optional, ignore error if already generated)
+                      try {
+                        const codeRes = await axios.patch(
+                          `/api/transactions/${id}/pickup-code`,
+                          {},
+                          { headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        // You can check codeRes.status if you want, but don't throw if it fails
+                      } catch (codeErr) {
+                        // Optionally log, but don't block navigation
+                        console.warn('Pickup code generation failed (may already exist):', codeErr?.response?.data?.error || codeErr.message);
+                      }
+
+                      // Only now: navigate to payment success
                       navigate(`/payment-success/${id}`);
                     } catch (error) {
                       console.error('Error:', error);
-                      alert('Zahlung erfolgreich!');
-                      navigate("/"); // Redirect to success page
+                      alert('Ein Fehler ist aufgetreten: ' + (error?.message || 'Unbekannter Fehler'));
+                      // Optionally: stay on page or navigate to error page
                     }
                   }}
                   onError={(err) => {

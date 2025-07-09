@@ -214,6 +214,7 @@ export default function App() {
   function handleLogout() {
     if (window.confirm('Are you sure you want to log out?')) {
       logout();
+      navigate('/'); // Redirect to home after logout
     }
   }
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { CounterContext } from '../App.jsx';
 import Container from 'react-bootstrap/Container';
@@ -18,13 +18,14 @@ import Modal from 'react-bootstrap/Modal';
 const STATUS_COLORS = {
   requested: 'secondary',
   accepted: 'success',
+  paid: 'info',
   rejected: 'danger',
-  borrowed: 'info',
-  returned: 'primary',
+  borrowed: 'primary',
+  returned: 'warning',
   completed: 'dark',
   renegotiation_requested: 'warning',
   retracted: 'secondary'
-}; // should match the colors in TransactionList.jsx
+};
 
 function StatusBadge({ status }) {
   const color = STATUS_COLORS[status] || 'secondary';
@@ -58,7 +59,11 @@ export default function ShowTransaction() {
   const [returnCode, setReturnCode] = useState('');
   const [lenderCode, setLenderCode] = useState('');
   const [returnError, setReturnError] = useState('');
+  const [showPickupModal, setShowPickupModal] = useState(false);
+  const [pickupCodeInput, setPickupCodeInput] = useState('');
+  const [pickupError, setPickupError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -98,6 +103,12 @@ export default function ShowTransaction() {
       checkCanReview();
     }
   }, [id, transaction]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('showPickup') === '1') setShowPickupModal(true);
+    if (params.get('showReturn') === '1') setShowReturnModal(true);
+  }, [location.search]);
 
   const handleAction = async (action) => {
     setUpdating(true);
@@ -230,7 +241,7 @@ export default function ShowTransaction() {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` }
       });
-      fetchCounts(); // <-- update counters after retract
+      fetchCounts();
       navigate(-1);
     } catch (err) {
       setError('Failed to delete transaction.');
@@ -271,11 +282,10 @@ export default function ShowTransaction() {
       });
       const data = await res.json();
       if (res.ok) {
-        // Redirect to the other user's review page
         const otherUserId = user.id === transaction.lender._id
           ? transaction.borrower._id
           : transaction.lender._id;
-        navigate(`/users/${otherUserId}/reviews`);
+        navigate(`/users/${otherUserId}/reviews?tab=${user.id === transaction.lender._id ? 'borrower' : 'lender'}`);
       } else {
         setReturnError(data.error || 'Incorrect code');
       }
@@ -293,16 +303,40 @@ export default function ShowTransaction() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        // Redirect to the other user's review page
         const otherUserId = user.id === transaction.lender._id
           ? transaction.borrower._id
           : transaction.lender._id;
-        navigate(`/users/${otherUserId}/reviews`);
+        navigate(`/users/${otherUserId}/reviews?tab=${user.id === transaction.lender._id ? 'borrower' : 'lender'}`);
       } else {
         setReturnError('Failed to complete return');
       }
     } catch (err) {
       setReturnError('Failed to complete return');
+    }
+  };
+
+  const handlePickupCodeSubmit = async () => {
+    setPickupError('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/transactions/${transaction._id}/pickup-code`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code: pickupCodeInput })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTransaction(data);
+        setShowPickupModal(false);
+        setPickupCodeInput('');
+      } else {
+        setPickupError(data.error || 'Invalid code');
+      }
+    } catch (err) {
+      setPickupError('Failed to submit code');
     }
   };
 
@@ -324,6 +358,27 @@ export default function ShowTransaction() {
         </Alert>
       )}
       <h2 className="mb-4">Transaction Details</h2>
+      {user?.id === transaction.borrower?._id && transaction.pickupCode && !transaction.pickupCodeUsed && (
+        <Alert variant="info" className="mt-3">
+          <strong>PickUp Code:</strong> {transaction.pickupCode}
+          <br />
+          Give this code to the lender when picking up the item. You can contact the lender via this email:
+          {lender?.email && (
+            <>
+              <br />
+              <strong>Lender Email:</strong>{' '}
+              <a href={`mailto:${lender.email}`}>{lender.email}</a>
+            </>
+          )}
+        </Alert>
+      )}
+      {user?.id === transaction.lender?._id && lenderCode && (
+        <Alert variant="info" className="mt-3">
+          <strong>Return Code:</strong> {lenderCode}
+          <br />
+          Give this code to the borrower when they return the item.
+        </Alert>
+      )}
       <Card className="mb-4">
         <Card.Body>
           <Card.Title>Transaction Info</Card.Title>
@@ -430,16 +485,57 @@ export default function ShowTransaction() {
                 <div className="d-flex justify-content-end gap-2 mt-3">
                   <Button
                     variant="primary"
-                    onClick={() => alert('Payment coming soon!')}
+                    onClick={() => navigate(`/payment/${transaction._id}`)}
                   >
                     Pay
                   </Button>
                 </div>
               );
             }
-            // Lender: Mark as Returned if borrowed
+            // Lender: Enter pickup code after payment
             if (
-              (user?.id === transaction.lender?._id || user?.id === transaction.borrower?._id) &&
+              user?.id === transaction.lender?._id &&
+              transaction.status === 'paid'
+            ) {
+              return (
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                  <Button
+                    variant="success"
+                    onClick={() => setShowPickupModal(true)}
+                    disabled={updating}
+                  >
+                    Enter Code after the Item was picked up
+                  </Button>
+                </div>
+              );
+            }
+            // Lender: Generate/View Return Code and Force Return if borrowed
+            if (
+              user?.id === transaction.lender?._id &&
+              transaction.status === 'borrowed'
+            ) {
+              return (
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                  <Button
+                    variant="info"
+                    onClick={handleGetReturnCode}
+                    disabled={updating}
+                  >
+                    Generate Code
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={handleForceComplete}
+                    disabled={updating}
+                  >
+                    Force Return
+                  </Button>
+                </div>
+              );
+            }
+            // Borrower: Enter the code after returning the item
+            if (
+              user?.id === transaction.borrower?._id &&
               transaction.status === 'borrowed'
             ) {
               return (
@@ -449,7 +545,45 @@ export default function ShowTransaction() {
                     onClick={() => setShowReturnModal(true)}
                     disabled={updating}
                   >
-                    Mark as Returned
+                    Enter the Code after returning the Item
+                  </Button>
+                </div>
+              );
+            }
+            // Borrower: Force Pick Up if paid
+            if (
+              user?.id === transaction.borrower?._id &&
+              transaction.status === 'paid'
+            ) {
+              return (
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                  <Button
+                    variant="danger"
+                    onClick={async () => {
+                      setUpdating(true);
+                      setError('');
+                      try {
+                        const token = localStorage.getItem('token');
+                        const res = await fetch(`/api/transactions/${transaction._id}/force-pickup`, {
+                          method: 'PATCH',
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setTransaction(data);
+                        } else {
+                          setError(data.error || 'Failed to force pick up');
+                          setShowError(true);
+                        }
+                      } catch (err) {
+                        setError('Failed to force pick up');
+                        setShowError(true);
+                      }
+                      setUpdating(false);
+                    }}
+                    disabled={updating}
+                  >
+                    Force Pick Up
                   </Button>
                 </div>
               );
@@ -543,7 +677,11 @@ export default function ShowTransaction() {
                 </Col>
               ))}
             </Row>
-            <Button as={Link} to={`/items/${item._id}`} className="mt-3" variant="primary">
+            <Button
+              className="mt-3"
+              variant="primary"
+              onClick={() => navigate(`/items/${item._id}`)}
+            >
               View Item
             </Button>
           </Card.Body>
@@ -555,22 +693,20 @@ export default function ShowTransaction() {
         <div className="d-flex justify-content-end mt-3">
           {user.id === transaction.lender?._id && transaction.borrower?._id && (
             <Button
-              as={Link}
-              to={`/users/${transaction.borrower._id}/reviews`}
               variant="outline-primary"
               size="sm"
               className="me-2"
+              onClick={() => navigate(`/users/${transaction.borrower._id}/reviews?tab=borrower`)}
             >
               View Borrower Reviews
             </Button>
           )}
           {user.id === transaction.borrower?._id && transaction.lender?._id && (
             <Button
-              as={Link}
-              to={`/users/${transaction.lender._id}/reviews`}
               variant="outline-primary"
               size="sm"
               className="me-2"
+              onClick={() => navigate(`/users/${transaction.lender._id}/reviews?tab=lender`)}
             >
               View Lender Reviews
             </Button>
@@ -589,32 +725,123 @@ export default function ShowTransaction() {
       {/* Return Code Modal */}
       <Modal show={showReturnModal} onHide={() => setShowReturnModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Mark as Returned</Modal.Title>
+          <Modal.Title>Return Item</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {user?.id === transaction.lender?._id && (
+          {/* Lender: Generate/View Return Code and Accept Return Without Code */}
+          {user?.id === transaction.lender?._id && transaction.status === 'borrowed' && (
             <>
-              <p>Give this code to the borrower:</p>
-              <Button onClick={handleGetReturnCode} variant="info" className="mb-2">Generate/View Code</Button>
-              {lenderCode && <div className="alert alert-success">Return Code: <strong>{lenderCode}</strong></div>}
-              <Button onClick={handleForceComplete} variant="danger" className="mt-2">Accept Return Without Code</Button>
+              <p>Give this code to the borrower when they return the item:</p>
+              <Button
+                onClick={handleGetReturnCode}
+                variant="info"
+                className="mb-2"
+                disabled={updating}
+              >
+                Generate/View Code
+              </Button>
+              {lenderCode && (
+                <div className="alert alert-success">
+                  Return Code: <strong>{lenderCode}</strong>
+                </div>
+              )}
+              <Button
+                onClick={handleForceComplete}
+                variant="danger"
+                className="mt-2"
+                disabled={updating}
+              >
+                Accept Return Without Code
+              </Button>
             </>
           )}
-          {user?.id === transaction.borrower?._id && (
+
+          {/* Borrower: Enter Return Code */}
+          {user?.id === transaction.borrower?._id && transaction.status === 'borrowed' && (
             <>
-              <p>Enter the code you received from the lender:</p>
+              <p>Enter the code you received from the lender to mark the item as returned:</p>
               <input
                 type="text"
                 value={returnCode}
                 onChange={e => setReturnCode(e.target.value)}
                 className="form-control mb-2"
               />
-              <Button onClick={handleSubmitReturnCode} variant="success">Submit Code</Button>
+              <Button
+                onClick={handleSubmitReturnCode}
+                variant="success"
+                disabled={updating}
+              >
+                Submit Code
+              </Button>
             </>
           )}
-          {returnError && <div className="alert alert-danger mt-2">{returnError}</div>}
+
+          {returnError && (
+            <div className="alert alert-danger mt-2">{returnError}</div>
+          )}
         </Modal.Body>
       </Modal>
+
+      {/* Pickup Code Modal */}
+      <Modal show={showPickupModal} onHide={() => setShowPickupModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Enter PickUp Code</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Enter the code you received from the borrower to mark the item as borrowed:</p>
+          <input
+            type="text"
+            value={pickupCodeInput}
+            onChange={e => setPickupCodeInput(e.target.value)}
+            className="form-control mb-2"
+          />
+          <Button
+            variant="success"
+            onClick={async () => {
+              setPickupError('');
+              setUpdating(true);
+              try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`/api/transactions/${transaction._id}/pickup-code`, {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ code: pickupCodeInput })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                  setShowPickupModal(false);
+                  setPickupCodeInput('');
+                  // Refetch transaction data
+                  const res2 = await fetch(`/api/transactions/${transaction._id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  const updated = await res2.json();
+                  setTransaction(updated);
+                } else {
+                  setPickupError(data.error || 'Incorrect code');
+                }
+              } catch (err) {
+                setPickupError('Failed to submit code');
+              }
+              setUpdating(false);
+            }}
+          >
+            Submit Code
+          </Button>
+          {pickupError && <div className="alert alert-danger mt-2">{pickupError}</div>}
+        </Modal.Body>
+      </Modal>
+
+      <Button
+        className="mt-3"
+        variant="secondary"
+        onClick={() => navigate(-1)}
+      >
+        ← Back
+      </Button>
     </Container>
   );
 }

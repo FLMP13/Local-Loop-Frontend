@@ -11,9 +11,10 @@ import Badge from 'react-bootstrap/Badge';
 const STATUS_COLORS = {
   requested: 'secondary',
   accepted: 'success',
+  paid: 'info',
   rejected: 'danger',
-  borrowed: 'info',
-  returned: 'primary',
+  borrowed: 'primary',
+  returned: 'warning',
   completed: 'dark',
   renegotiation_requested: 'warning',
   retracted: 'secondary'
@@ -27,6 +28,125 @@ function StatusBadge({ status }) {
       {label}
     </Badge>
   );
+}
+
+// Inline TransactionActions logic here
+function ActionButtons({ transaction, user, onAction }) {
+  const navigate = useNavigate();
+  const [updating, setUpdating] = useState(false);
+
+  const handleAction = (action) => {
+    setUpdating(true);
+    onAction && onAction(action, transaction._id, setUpdating);
+  };
+
+  // Lender: Accept/Decline/Renegotiate if requested
+  if (user?.id === transaction.lender?._id && transaction.status === 'requested') {
+    return (
+      <div className="d-flex gap-2">
+        <Button
+          variant="success"
+          size="sm"
+          disabled={updating}
+          onClick={e => { e.stopPropagation(); handleAction('accept'); }}
+        >
+          Accept
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          disabled={updating}
+          onClick={e => { e.stopPropagation(); handleAction('decline'); }}
+        >
+          Decline
+        </Button>
+        <Button
+          variant="warning"
+          size="sm"
+          disabled={updating}
+          onClick={e => { e.stopPropagation(); handleAction('renegotiate'); }}
+        >
+          Renegotiate
+        </Button>
+      </div>
+    );
+  }
+
+  // Borrower: Pay if accepted
+  if (user?.id === transaction.borrower?._id && transaction.status === 'accepted') {
+    return (
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={e => { e.stopPropagation(); navigate(`/payment/${transaction._id}`); }}
+      >
+        Pay
+      </Button>
+    );
+  }
+
+  // Lender: Enter PickUp Code after payment
+  if (user?.id === transaction.lender?._id && transaction.status === 'paid') {
+    return (
+      <Button
+        variant="success"
+        size="sm"
+        onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showPickup=1`); }}
+      >
+        Enter PickUp Code
+      </Button>
+    );
+  }
+
+  // Lender: Generate Code and Force Return if borrowed
+  if (user?.id === transaction.lender?._id && transaction.status === 'borrowed') {
+    return (
+      <div className="d-flex gap-2">
+        <Button
+          variant="info"
+          size="sm"
+          onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
+        >
+          Generate Code
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
+        >
+          Force Return
+        </Button>
+      </div>
+    );
+  }
+
+  // Borrower: Enter the code after returning the item
+  if (user?.id === transaction.borrower?._id && transaction.status === 'borrowed') {
+    return (
+      <Button
+        variant="success"
+        size="sm"
+        onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showReturn=1`); }}
+      >
+        Enter the Code after returning the Item
+      </Button>
+    );
+  }
+
+  // Borrower: Force Pick Up if paid
+  if (user?.id === transaction.borrower?._id && transaction.status === 'paid') {
+    return (
+      <Button
+        variant="danger"
+        size="sm"
+        onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
+      >
+        Force Pick Up
+      </Button>
+    );
+  }
+
+  return null;
 }
 
 export default function TransactionList({ endpoint, title, statusOptions, onTransactionChange }) {
@@ -59,22 +179,18 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
   }, [endpoint]);
 
   function getStatusPriority(transaction, userId) {
-    // Lower number = higher priority (top of list)
     if (transaction.status === 'requested') return 0;
     if (transaction.status === 'renegotiation_requested') return 1;
     if (transaction.status === 'accepted' || transaction.status === 'borrowed' || transaction.status === 'returned') return 2;
     if (transaction.status === 'rejected' || transaction.status === 'declined') return 3;
     if (transaction.status === 'completed') return 4;
-    return 5; // Unknown status
+    return 5;
   }
 
   function filterAndSortTransactions(transactions, filter, userId) {
     let filtered = transactions.filter(t => {
-      // Status filter
       if (filter.status && t.status !== filter.status) return false;
-      // Max price filter
       if (filter.maxPrice && t.item?.price > Number(filter.maxPrice)) return false;
-      // Name/description/username filter
       if (filter.name) {
         const search = filter.name.toLowerCase();
         const fields = [
@@ -90,7 +206,6 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
       return true;
     });
 
-    // Sort by action priority, then by date
     filtered = filtered.sort((a, b) => {
       const pa = getStatusPriority(a, userId);
       const pb = getStatusPriority(b, userId);
@@ -98,7 +213,6 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
       if (filter.sortBy === 'date_asc') {
         return new Date(a.requestDate) - new Date(b.requestDate);
       }
-      // Default: newest first
       return new Date(b.requestDate) - new Date(a.requestDate);
     });
 
@@ -128,7 +242,6 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
         <p>No transactions found.</p>
       ) : (
         filteredTransactions.map(tx => {
-          // Defensive checks for missing data
           const itemTitle = tx.item?.title || 'Unknown Item';
           const borrowerName = tx.borrower?.nickname || tx.borrower?.email || 
                               `${tx.borrower?.firstName || ''} ${tx.borrower?.lastName || ''}`.trim() || 'Unknown';
@@ -138,29 +251,45 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
           const requestDate = tx.requestDate ? new Date(tx.requestDate).toLocaleString() : 'Unknown';
 
           let cardBg = '';
-          let cardText = 'text-dark';
-
-          if (tx.status === 'requested') {
-            cardBg = 'bg-warning';
-            cardText = 'text-dark';
-          } else if (tx.status === 'accepted' || tx.status === 'approved') {
-            cardBg = 'bg-success';
-            cardText = 'text-white';
-          } else if (tx.status === 'rejected' || tx.status === 'declined') {
-            cardBg = 'bg-danger';
-            cardText = 'text-white';
-          } else if (tx.status === 'completed') {
-            cardBg = 'bg-info';
-            cardText = 'text-white';
+          switch (tx.status) {
+            case 'requested':
+              cardBg = 'card-bg-requested';
+              break;
+            case 'accepted':
+              cardBg = 'card-bg-accepted';
+              break;
+            case 'paid':
+              cardBg = 'card-bg-paid';
+              break;
+            case 'rejected':
+              cardBg = 'card-bg-rejected';
+              break;
+            case 'borrowed':
+              cardBg = 'card-bg-borrowed';
+              break;
+            case 'returned':
+              cardBg = 'card-bg-returned';
+              break;
+            case 'completed':
+              cardBg = 'card-bg-completed';
+              break;
+            case 'renegotiation_requested':
+              cardBg = 'card-bg-renegotiation';
+              break;
+            case 'retracted':
+              cardBg = 'card-bg-retracted text-muted';
+              break;
+            default:
+              cardBg = 'card-bg-requested';
           }
 
-          const allowedStates = ['requested', 'renegotiation_requested'];
-          const isForbidden = !allowedStates.includes(tx.status);
+          // Use text-dark for all cards for readability, except for completed/retracted (muted)
+          const cardText = (tx.status === 'completed' || tx.status === 'retracted') ? 'text-muted' : 'text-dark';
 
           return (
             <Card
               key={tx._id}
-              className={`mb-3 ${cardText} ${cardBg} ${tx.status === 'retracted' ? 'text-muted bg-light' : ''}`}
+              className={`mb-3 ${cardText} ${cardBg}`}
               style={tx.status === 'retracted' ? { opacity: 0.6, cursor: 'pointer' } : { cursor: 'pointer' }}
               onClick={() => navigate(`/transactions/${tx._id}`)}
             >
@@ -176,76 +305,30 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
                     </Card.Text>
                   </div>
                   <div className="text-end">
-                    {/* Add review links for completed transactions */}
-                    {tx.status === 'completed' && (
-                      <div>
-                        {tx.borrower?._id && tx.borrower._id !== user?.id && (
-                          <Button 
-                            as={Link} 
-                            to={`/users/${tx.borrower._id}/reviews`}
-                            variant="outline-light"
-                            size="sm"
-                            className="d-block mt-1"
-                          >
-                            Borrower Reviews
-                          </Button>
-                        )}
-                        {tx.lender?._id && tx.lender._id !== user?.id && (
-                          <Button 
-                            as={Link} 
-                            to={`/users/${tx.lender._id}/reviews`}
-                            variant="outline-light"
-                            size="sm"
-                            className="d-block mt-1"
-                          >
-                            Lender Reviews
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                    <div className="mt-2 d-flex gap-2">
-                      <Button
-                        as={Link}
-                        to={`/transactions/edit/${tx._id}`}
-                        variant="outline-primary"
-                        size="sm"
-                        className={`fw-bold ${isForbidden ? 'disabled text-muted border-secondary' : ''}`}
-                        disabled={isForbidden}
-                        style={{ minWidth: 70 }}
-                        onClick={e => e.stopPropagation()}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        onClick={async e => {
-                          e.stopPropagation();
-                          if (isForbidden) return;
-                          if (window.confirm('Are you sure you want to delete this transaction?')) {
-                            try {
-                              const token = localStorage.getItem('token');
-                              await fetch(`/api/transactions/${tx._id}/retract`, {
-                                method: 'PATCH',
-                                headers: { Authorization: `Bearer ${token}` }
-                              });
-                              setTransactions(transactions.map(t =>
-                                t._id === tx._id ? { ...t, status: 'retracted' } : t
-                              ));
-                              alert('Transaction deleted successfully.');
-                            } catch (err) {
-                              console.error('Error deleting transaction:', err);
-                              alert('Failed to delete transaction.');
-                            }
-                          }
-                        }}
-                        variant="outline-danger"
-                        size="sm"
-                        className={`fw-bold ${isForbidden ? 'disabled text-muted border-secondary' : ''}`}
-                        disabled={isForbidden}
-                        style={{ minWidth: 70 }}
-                      >
-                        Delete
-                      </Button>
-                    </div>
+                    {/* Inline action buttons */}
+                    <ActionButtons
+                      transaction={tx}
+                      user={user}
+                      onAction={async (action, id, setUpdating) => {
+                        // Actions that require more input or navigation
+                        if (action === 'renegotiate' || action === 'pay' || action === 'edit' || action === 'markAsReturned') {
+                          navigate(`/transactions/${id}`);
+                          return;
+                        }
+                        // Simple PATCH actions
+                        setUpdating(true);
+                        const token = localStorage.getItem('token');
+                        try {
+                          await fetch(`/api/transactions/${id}/${action}`, {
+                            method: 'PATCH',
+                            headers: { Authorization: `Bearer ${token}` }
+                          });
+                          navigate(`/transactions/${id}`); // Navigate after action
+                        } finally {
+                          setUpdating(false);
+                        }
+                      }}
+                    />
                   </div>
                 </div>
               </Card.Body>

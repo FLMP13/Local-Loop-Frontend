@@ -114,3 +114,13 @@ a:hover {
   display: flex;
   height: 100%;
 }
+
+.card-bg-requested    { background-color: #f8f9fa !important; } /* light gray */
+.card-bg-accepted     { background-color: #d1e7dd !important; } /* pastel green */
+.card-bg-paid         { background-color: #cff4fc !important; } /* pastel blue */
+.card-bg-rejected     { background-color: #f8d7da !important; } /* pastel red */
+.card-bg-borrowed     { background-color: #cfe2ff !important; } /* pastel primary */
+.card-bg-returned     { background-color: #fff3cd !important; } /* pastel yellow */
+.card-bg-completed    { background-color: #e2e3e5 !important; } /* pastel dark/gray */
+.card-bg-renegotiation{ background-color: #fff3cd !important; } /* pastel yellow */
+.card-bg-retracted    { background-color: #f8f9fa !important; color: #6c757d !important; }
