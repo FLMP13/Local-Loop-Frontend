@@ -30,14 +30,100 @@ function StatusBadge({ status }) {
   );
 }
 
-// Inline TransactionActions logic here
+// Helper function to check if a transaction has active buttons for the user
+function hasActiveButtons(transaction, user) {
+  if (!user || !transaction) return false;
+  
+  // Lender: Accept/Decline/Renegotiate if requested
+  if (user.id === transaction.lender?._id && transaction.status === 'requested') {
+    return true;
+  }
+  
+  // Borrower: Accept/Decline if renegotiation_requested
+  if (user.id === transaction.borrower?._id && transaction.status === 'renegotiation_requested') {
+    return true;
+  }
+  
+  // Borrower: Edit/Delete for requested (only when not renegotiation_requested)
+  if (user.id === transaction.borrower?._id && transaction.status === 'requested') {
+    return true;
+  }
+  
+  // Borrower: Pay button for accepted
+  if (user.id === transaction.borrower?._id && transaction.status === 'accepted') {
+    return true;
+  }
+  
+  // Lender: Enter pickup code after payment
+  if (user.id === transaction.lender?._id && transaction.status === 'paid') {
+    return true;
+  }
+  
+  // Lender: Generate/View Return Code and Force Return if borrowed
+  if (user.id === transaction.lender?._id && transaction.status === 'borrowed') {
+    return true;
+  }
+  
+  // Borrower: Enter the code after returning the item
+  if (user.id === transaction.borrower?._id && transaction.status === 'borrowed') {
+    return true;
+  }
+  
+  // Borrower: Force Pick Up if paid
+  if (user.id === transaction.borrower?._id && transaction.status === 'paid') {
+    return true;
+  }
+  
+  return false;
+}
+
+// Action buttons component matching ShowTransaction.jsx
 function ActionButtons({ transaction, user, onAction }) {
   const navigate = useNavigate();
   const [updating, setUpdating] = useState(false);
 
-  const handleAction = (action) => {
+  const handleAction = async (action) => {
     setUpdating(true);
-    onAction && onAction(action, transaction._id, setUpdating);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('You must be logged in to perform this action.');
+      
+      let url = `/api/transactions/${transaction._id}/${action}`;
+      let method = 'PATCH';
+      let body = null;
+      
+      // Handle renegotiation actions differently
+      if (action === 'renegotiation/accept') {
+        url = `/api/transactions/${transaction._id}/renegotiation/accept`;
+      } else if (action === 'renegotiation/decline') {
+        url = `/api/transactions/${transaction._id}/renegotiation/decline`;
+        method = 'PATCH';
+        body = JSON.stringify({ message: "Sorry, can't do those dates." });
+      } else if (action === 'retract') {
+        url = `/api/transactions/${transaction._id}/retract`;
+      }
+      
+      const options = {
+        method,
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          ...(body && { 'Content-Type': 'application/json' })
+        },
+        ...(body && { body })
+      };
+      
+      await fetch(url, options);
+      // Refresh the transaction list after action
+      onAction && onAction();
+    } catch (err) {
+      console.error('Action failed:', err);
+    }
+    setUpdating(false);
+  };
+
+  const handleDeleteClick = async () => {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+    await handleAction('retract');
   };
 
   // Lender: Accept/Decline/Renegotiate if requested
@@ -64,9 +150,59 @@ function ActionButtons({ transaction, user, onAction }) {
           variant="warning"
           size="sm"
           disabled={updating}
-          onClick={e => { e.stopPropagation(); handleAction('renegotiate'); }}
+          onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
         >
           Renegotiate
+        </Button>
+      </div>
+    );
+  }
+
+  // Borrower: Accept/Decline if renegotiation_requested
+  if (user?.id === transaction.borrower?._id && transaction.status === 'renegotiation_requested') {
+    return (
+      <div className="d-flex gap-2">
+        <Button
+          variant="success"
+          size="sm"
+          disabled={updating}
+          onClick={e => { e.stopPropagation(); handleAction('renegotiation/accept'); }}
+        >
+          Accept
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          disabled={updating}
+          onClick={e => { e.stopPropagation(); handleAction('renegotiation/decline'); }}
+        >
+          Decline
+        </Button>
+      </div>
+    );
+  }
+
+  // Borrower: Edit/Delete for requested (but not when renegotiation_requested because then they have Accept/Decline)
+  if (
+    user?.id === transaction.borrower?._id &&
+    transaction.status === 'requested'
+  ) {
+    return (
+      <div className="d-flex gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}/edit`); }}
+        >
+          Edit
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          disabled={updating}
+          onClick={e => { e.stopPropagation(); handleDeleteClick(); }}
+        >
+          Delete
         </Button>
       </div>
     );
@@ -93,7 +229,7 @@ function ActionButtons({ transaction, user, onAction }) {
         size="sm"
         onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showPickup=1`); }}
       >
-        Enter PickUp Code
+        Enter Code after Item was picked up
       </Button>
     );
   }
@@ -105,6 +241,7 @@ function ActionButtons({ transaction, user, onAction }) {
         <Button
           variant="info"
           size="sm"
+          disabled={updating}
           onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
         >
           Generate Code
@@ -112,6 +249,7 @@ function ActionButtons({ transaction, user, onAction }) {
         <Button
           variant="danger"
           size="sm"
+          disabled={updating}
           onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
         >
           Force Return
@@ -156,36 +294,28 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
   const [filter, setFilter] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        
-        const data = await res.json();
-        setTransactions(data || []);
-      } catch (err) {
-        console.error('Error fetching transactions:', err);
-        setError('Failed to load transactions.');
+  const fetchTransactions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(endpoint, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
-    };
+      
+      const data = await res.json();
+      setTransactions(data || []);
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+      setError('Failed to load transactions.');
+    }
+  };
+
+  useEffect(() => {
     fetchTransactions();
   }, [endpoint]);
-
-  function getStatusPriority(transaction, userId) {
-    if (transaction.status === 'requested') return 0;
-    if (transaction.status === 'renegotiation_requested') return 1;
-    if (transaction.status === 'accepted' || transaction.status === 'borrowed' || transaction.status === 'returned') return 2;
-    if (transaction.status === 'rejected' || transaction.status === 'declined') return 3;
-    if (transaction.status === 'completed') return 4;
-    return 5;
-  }
 
   function filterAndSortTransactions(transactions, filter, userId) {
     let filtered = transactions.filter(t => {
@@ -206,10 +336,16 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
       return true;
     });
 
+    // Sort by: 1) Active buttons first, 2) Date (newest first or as specified)
     filtered = filtered.sort((a, b) => {
-      const pa = getStatusPriority(a, userId);
-      const pb = getStatusPriority(b, userId);
-      if (pa !== pb) return pa - pb;
+      const aHasButtons = hasActiveButtons(a, { id: userId });
+      const bHasButtons = hasActiveButtons(b, { id: userId });
+      
+      // Transactions with active buttons come first
+      if (aHasButtons && !bHasButtons) return -1;
+      if (!aHasButtons && bHasButtons) return 1;
+      
+      // If both have or don't have buttons, sort by date
       if (filter.sortBy === 'date_asc') {
         return new Date(a.requestDate) - new Date(b.requestDate);
       }
@@ -305,29 +441,11 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
                     </Card.Text>
                   </div>
                   <div className="text-end">
-                    {/* Inline action buttons */}
+                    {/* Action buttons matching ShowTransaction.jsx */}
                     <ActionButtons
                       transaction={tx}
                       user={user}
-                      onAction={async (action, id, setUpdating) => {
-                        // Actions that require more input or navigation
-                        if (action === 'renegotiate' || action === 'pay' || action === 'edit' || action === 'markAsReturned') {
-                          navigate(`/transactions/${id}`);
-                          return;
-                        }
-                        // Simple PATCH actions
-                        setUpdating(true);
-                        const token = localStorage.getItem('token');
-                        try {
-                          await fetch(`/api/transactions/${id}/${action}`, {
-                            method: 'PATCH',
-                            headers: { Authorization: `Bearer ${token}` }
-                          });
-                          navigate(`/transactions/${id}`); // Navigate after action
-                        } finally {
-                          setUpdating(false);
-                        }
-                      }}
+                      onAction={fetchTransactions} // Refresh transactions after action
                     />
                   </div>
                 </div>

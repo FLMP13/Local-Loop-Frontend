@@ -63,6 +63,53 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Helper function to check if a transaction has active buttons for the user
+  const hasActiveButtons = (transaction, user) => {
+    if (!user || !transaction) return false;
+    
+    // Lender: Accept/Decline/Renegotiate if requested
+    if (user.id === transaction.lender?._id && transaction.status === 'requested') {
+      return true;
+    }
+    
+    // Borrower: Accept/Decline if renegotiation_requested
+    if (user.id === transaction.borrower?._id && transaction.status === 'renegotiation_requested') {
+      return true;
+    }
+    
+    // Borrower: Edit/Delete for requested (only when not renegotiation_requested)
+    if (user.id === transaction.borrower?._id && transaction.status === 'requested') {
+      return true;
+    }
+    
+    // Borrower: Pay button for accepted
+    if (user.id === transaction.borrower?._id && transaction.status === 'accepted') {
+      return true;
+    }
+    
+    // Lender: Enter pickup code after payment
+    if (user.id === transaction.lender?._id && transaction.status === 'paid') {
+      return true;
+    }
+    
+    // Lender: Generate/View Return Code and Force Return if borrowed
+    if (user.id === transaction.lender?._id && transaction.status === 'borrowed') {
+      return true;
+    }
+    
+    // Borrower: Enter the code after returning the item
+    if (user.id === transaction.borrower?._id && transaction.status === 'borrowed') {
+      return true;
+    }
+    
+    // Borrower: Force Pick Up if paid
+    if (user.id === transaction.borrower?._id && transaction.status === 'paid') {
+      return true;
+    }
+    
+    return false;
+  };
+
   // Fetch counters function
   const fetchCounts = async () => {
     if (!user) {
@@ -77,9 +124,10 @@ export default function App() {
     ]);
     const borrowings = borrowingsRes.ok ? await borrowingsRes.json() : [];
     const lendings = lendingsRes.ok ? await lendingsRes.json() : [];
-    const openStatuses = ['requested', 'accepted', 'renegotiation_requested', 'borrowed', 'returned'];
-    setBorrowingsCount(borrowings.filter(t => openStatuses.includes(t.status)).length);
-    setLendingsCount(lendings.filter(t => openStatuses.includes(t.status)).length);
+    
+    // Count transactions with active buttons instead of just open statuses
+    setBorrowingsCount(borrowings.filter(t => hasActiveButtons(t, user)).length);
+    setLendingsCount(lendings.filter(t => hasActiveButtons(t, user)).length);
   };
 
   // Fetch counters on user change and on every route change

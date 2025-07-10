@@ -154,8 +154,18 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
-  const handleReviewSubmitted = () => {
+  const handleReviewSubmitted = async () => {
     setCanReview({ canReview: false, role: null });
+    setShowReviewModal(false);
+    
+    // Determine which user was reviewed and their role
+    const reviewedUserId = canReview.role === 'borrower' 
+      ? transaction.lender._id 
+      : transaction.borrower._id;
+    const reviewedUserRole = canReview.role === 'borrower' ? 'lender' : 'borrower';
+    
+    // Navigate to the reviewed user's page with the appropriate tab
+    navigate(`/users/${reviewedUserId}/reviews?tab=${reviewedUserRole}`);
   };
 
   const handleRenegotiate = async ({ from, to, message }, id) => {
@@ -282,10 +292,35 @@ export default function ShowTransaction() {
       });
       const data = await res.json();
       if (res.ok) {
-        const otherUserId = user.id === transaction.lender._id
-          ? transaction.borrower._id
-          : transaction.lender._id;
-        navigate(`/users/${otherUserId}/reviews?tab=${user.id === transaction.lender._id ? 'borrower' : 'lender'}`);
+        // Close the return modal first
+        setShowReturnModal(false);
+        // Clear the return code input
+        setReturnCode('');
+        
+        // Always refetch the complete transaction data to ensure consistency
+        try {
+          const refetchRes = await fetch(`/api/transactions/${transaction._id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (refetchRes.ok) {
+            const fullData = await refetchRes.json();
+            setTransaction(fullData);
+            
+            // Set review permission and role for the borrower
+            setCanReview({ canReview: true, role: 'borrower' });
+            // Update counters since transaction status changed
+            fetchCounts();
+            // Show the review modal after ensuring transaction data is updated
+            setTimeout(() => {
+              setShowReviewModal(true);
+            }, 200);
+          } else {
+            setReturnError('Failed to load updated transaction data');
+          }
+        } catch (refetchErr) {
+          console.error('Failed to refetch transaction:', refetchErr);
+          setReturnError('Failed to load updated transaction data');
+        }
       } else {
         setReturnError(data.error || 'Incorrect code');
       }
@@ -714,13 +749,15 @@ export default function ShowTransaction() {
         </div>
       )}
 
-      <ReviewModal
-        show={showReviewModal}
-        onHide={() => setShowReviewModal(false)}
-        transaction={transaction}
-        userRole={canReview.role}
-        onReviewSubmitted={handleReviewSubmitted}
-      />
+      {transaction && transaction._id && (transaction.borrower || transaction.lender) && (
+        <ReviewModal
+          show={showReviewModal}
+          onHide={() => setShowReviewModal(false)}
+          transaction={transaction}
+          userRole={canReview.role}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
+      )}
 
       {/* Return Code Modal */}
       <Modal show={showReturnModal} onHide={() => setShowReturnModal(false)}>
