@@ -5,6 +5,7 @@ import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom' 
 import { AuthContext } from '../context/AuthContext.jsx'
 import RatingDisplay from '../components/RatingDisplay'
+import PasswordInput from '../components/PasswordInput'
 
 //TODO: Profile pic persistence
 
@@ -161,192 +162,380 @@ export default function MyProfile() {
   }
 
   return (
-    <Container className="py-5">
-      <h1 className="mb-4">My Profile</h1>
-
-      {error   && <Alert variant="danger">{error}</Alert>}
-      {success && <Alert variant="success">{success}</Alert>}
-
-      <Form onSubmit={handleProfileSubmit}>
-        <Row className="mb-3">
-          <Col xs="auto" className="text-center">
-            <div
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: '50%',
-                overflow: 'hidden',
-                cursor: 'pointer',
-                backgroundColor: '#f0f0f0'
-              }}
-              onClick={handleAvatarClick}
-            >
-              {formData.avatarUrl
-                ? (
-                  // display avatar from either endpoint or preview
-                  <Image src={formData.avatarUrl} roundedCircle fluid />
-                ) : (
-                  <span style={{ lineHeight: '100px' }}>Upload</span>
-                )
-              }
-            </div>
-            <Form.Control
-              type="file"
-              name="avatar" 
-              accept="image/*"
-              ref={fileInputRef}                                              // attach ref
-              onChange={handleAvatarChange}
-              style={{ display: 'none' }}
-            />
-          </Col>
-          <Col>
-            <Form.Group className="mb-3" controlId="firstName">
-              <Form.Label>First Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                disabled
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="lastName">
-              <Form.Label>Last Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                disabled
-              />
-            </Form.Group>
-          </Col>
-        </Row>
-
-        <Form.Group className="mb-3" controlId="nickname">
-          <Form.Label>Nickname</Form.Label>
-          <Form.Control
-            type="text"
-            name="nickname"
-            value={formData.nickname}
-            onChange={handleChange}
-            required
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-3" controlId="email">
-          <Form.Label>Email</Form.Label>
-          <Form.Control
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-3" controlId="zipCode">
-          <Form.Label>Zip Code</Form.Label>
-          <Form.Control
-            type="text"
-            name="zipCode"
-            value={formData.zipCode}
-            onChange={handleChange}
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-3" controlId="bio">
-          <Form.Label>Bio</Form.Label>
-          <Form.Control
-            as="textarea"
-            name="bio"
-            value={formData.bio}
-            onChange={handleChange}
-            rows={3}
-          />
-        </Form.Group>
-
-        <div className="d-flex justify-content-between mb-5">
-          <Button variant="dark" type="submit">Save Profile</Button>
-          <Button variant="outline-secondary" onClick={handleLogout}>Log Out</Button>
-        </div>
-      </Form>
-
-      {/* Add Ratings Section */}
-      <Card className="mt-4">
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">My Ratings</h5>
-          {user && (
+    <Container fluid className="px-md-5" style={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
+      {/* Modern Hero Section */}
+      <div className="hero-section bg-light p-4 p-md-5 mb-4">
+        <div className="row align-items-center">
+          <div className="col">
+            <h1 className="display-5 fw-bold mb-3">My Profile</h1>
+            <p className="lead text-muted mb-0">
+              Manage your account settings and view your community reputation
+            </p>
+          </div>
+          <div className="col-auto">
             <Button 
-              as={Link} 
-              to={`/users/${user.id}/reviews`} 
-              variant="outline-primary"
-              size="sm"
+              variant="danger" 
+              size="lg"
+              className="rounded-pill px-4"
+              onClick={handleLogout}
             >
-              View All Reviews
+              🚪 Log Out
             </Button>
-          )}
-        </Card.Header>
-        <Card.Body>
-          <Row>
-            <Col md={6}>
-              <h6>As Lender</h6>
-              <RatingDisplay 
-                rating={formData.lenderRating?.average || 0} 
-                count={formData.lenderRating?.count || 0} 
-                size="lg"
-              />
+          </div>
+        </div>
+      </div>
+
+      {/* Alert Messages */}
+      {error && (
+        <Alert variant="danger" className="rounded-pill mb-4 mx-auto" style={{ maxWidth: '800px' }}>
+          <div className="d-flex align-items-center">
+            <span className="me-2">⚠️</span>
+            {error}
+          </div>
+        </Alert>
+      )}
+      {success && (
+        <Alert variant="success" className="rounded-pill mb-4 mx-auto" style={{ maxWidth: '800px' }}>
+          <div className="d-flex align-items-center">
+            <span className="me-2">✅</span>
+            {success}
+          </div>
+        </Alert>
+      )}
+
+      {/* Main Content */}
+      <Row className="justify-content-center g-4">
+        <Col xl={10}>
+          <Row className="g-4">
+            {/* Profile Information Card */}
+            <Col lg={8}>
+              <Card className="border-0 shadow-sm modern-card h-100">
+                <Card.Body className="p-4 p-md-5">
+                  <div className="d-flex align-items-center mb-4">
+                    <h4 className="fw-bold mb-0">Profile Information</h4>
+                  </div>
+                  
+                  <Form onSubmit={handleProfileSubmit}>
+                    {/* Avatar and Basic Info */}
+                    <div className="mb-5">
+                      <Row className="align-items-center">
+                        <Col xs="auto">
+                          <div className="position-relative">
+                            <div
+                              className="avatar-upload-container"
+                              style={{
+                                width: '120px',
+                                height: '120px',
+                                borderRadius: '50%',
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                backgroundColor: '#f8f9fa',
+                                border: '3px solid #e9ecef',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                position: 'relative'
+                              }}
+                              onClick={handleAvatarClick}
+                              onMouseEnter={(e) => {
+                                e.target.style.borderColor = 'var(--brand)';
+                                e.target.style.transform = 'scale(1.02)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.borderColor = '#e9ecef';
+                                e.target.style.transform = 'scale(1)';
+                              }}
+                            >
+                              {formData.avatarUrl ? (
+                                <Image 
+                                  src={formData.avatarUrl} 
+                                  style={{ 
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover' 
+                                  }} 
+                                />
+                              ) : (
+                                <div className="text-center">
+                                  <div style={{ fontSize: '2rem', color: '#6c757d' }}>👤</div>
+                                  <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '500' }}>
+                                    Upload Photo
+                                  </div>
+                                </div>
+                              )}
+                              <div 
+                                className="position-absolute bottom-0 end-0 bg-primary rounded-circle d-flex align-items-center justify-content-center"
+                                style={{ width: '32px', height: '32px', border: '3px solid white' }}
+                              >
+                                <span style={{ fontSize: '0.75rem', color: 'white' }}>📷</span>
+                              </div>
+                            </div>
+                            <Form.Control
+                              type="file"
+                              name="avatar" 
+                              accept="image/*"
+                              ref={fileInputRef}
+                              onChange={handleAvatarChange}
+                              style={{ display: 'none' }}
+                            />
+                          </div>
+                        </Col>
+                        <Col>
+                          <Row className="g-3">
+                            <Col md={6}>
+                              <Form.Group controlId="firstName">
+                                <Form.Label className="fw-semibold">First Name</Form.Label>
+                                <Form.Control
+                                  type="text"
+                                  name="firstName"
+                                  value={formData.firstName}
+                                  disabled
+                                  className="rounded-pill px-4 py-3 bg-light"
+                                  style={{ fontSize: '1rem' }}
+                                />
+                              </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                              <Form.Group controlId="lastName">
+                                <Form.Label className="fw-semibold">Last Name</Form.Label>
+                                <Form.Control
+                                  type="text"
+                                  name="lastName"
+                                  value={formData.lastName}
+                                  disabled
+                                  className="rounded-pill px-4 py-3 bg-light"
+                                  style={{ fontSize: '1rem' }}
+                                />
+                              </Form.Group>
+                            </Col>
+                          </Row>
+                        </Col>
+                      </Row>
+                    </div>
+
+                    {/* Editable Fields */}
+                    <div className="mb-4">
+                      <Row className="g-4">
+                        <Col md={6}>
+                          <Form.Group controlId="nickname">
+                            <Form.Label className="fw-semibold">Nickname *</Form.Label>
+                            <Form.Control
+                              type="text"
+                              name="nickname"
+                              value={formData.nickname}
+                              onChange={handleChange}
+                              required
+                              className="rounded-pill px-4 py-3"
+                              style={{ fontSize: '1rem' }}
+                              placeholder="Your display name"
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                          <Form.Group controlId="zipCode">
+                            <Form.Label className="fw-semibold">Zip Code</Form.Label>
+                            <Form.Control
+                              type="text"
+                              name="zipCode"
+                              value={formData.zipCode}
+                              onChange={handleChange}
+                              className="rounded-pill px-4 py-3"
+                              style={{ fontSize: '1rem' }}
+                              placeholder="Your area code"
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    </div>
+
+                    <Form.Group className="mb-4" controlId="email">
+                      <Form.Label className="fw-semibold">Email Address *</Form.Label>
+                      <Form.Control
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        className="rounded-pill px-4 py-3"
+                        style={{ fontSize: '1rem' }}
+                        placeholder="your.email@example.com"
+                      />
+                    </Form.Group>
+
+                    <Form.Group className="mb-5" controlId="bio">
+                      <Form.Label className="fw-semibold">Bio</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleChange}
+                        rows={4}
+                        className="rounded-3 px-4 py-3"
+                        style={{ fontSize: '1rem', resize: 'none' }}
+                        placeholder="Tell the community about yourself, your interests, and what you like to share..."
+                      />
+                      <Form.Text className="text-muted small">
+                        Help others get to know you better
+                      </Form.Text>
+                    </Form.Group>
+
+                    <div className="d-grid">
+                      <Button 
+                        variant="primary" 
+                        type="submit" 
+                        size="lg"
+                        className="rounded-pill py-3"
+                        style={{ fontSize: '1.1rem', fontWeight: '600' }}
+                      >
+                        💾 Save Profile Changes
+                      </Button>
+                    </div>
+                  </Form>
+                </Card.Body>
+              </Card>
             </Col>
-            <Col md={6}>
-              <h6>As Borrower</h6>
-              <RatingDisplay 
-                rating={formData.borrowerRating?.average || 0} 
-                count={formData.borrowerRating?.count || 0} 
-                size="lg"
-              />
+
+            {/* Ratings Sidebar */}
+            <Col lg={4}>
+              <Card className="border-0 shadow-sm modern-card mb-4">
+                <Card.Body className="p-4">
+                  <div className="d-flex align-items-center justify-content-between mb-3">
+                    <h5 className="fw-bold mb-0">Community Ratings</h5>
+                    {user && (
+                      <Button 
+                        as={Link} 
+                        to={`/users/${user.id}/reviews`} 
+                        variant="outline-primary"
+                        size="sm"
+                        className="rounded-pill px-3"
+                      >
+                        📝 Reviews
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="d-flex align-items-center mb-2">
+                      <span className="me-2" style={{ fontSize: '1.2rem' }}>🏠</span>
+                      <span className="fw-semibold">As Lender</span>
+                    </div>
+                    <RatingDisplay 
+                      rating={formData.lenderRating?.average || 0} 
+                      count={formData.lenderRating?.count || 0} 
+                      size="lg"
+                    />
+                    <p className="text-muted small mt-2 mb-0">
+                      Based on {formData.lenderRating?.count || 0} review{formData.lenderRating?.count !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <div className="d-flex align-items-center mb-2">
+                      <span className="me-2" style={{ fontSize: '1.2rem' }}>🤝</span>
+                      <span className="fw-semibold">As Borrower</span>
+                    </div>
+                    <RatingDisplay 
+                      rating={formData.borrowerRating?.average || 0} 
+                      count={formData.borrowerRating?.count || 0} 
+                      size="lg"
+                    />
+                    <p className="text-muted small mt-2 mb-0">
+                      Based on {formData.borrowerRating?.count || 0} review{formData.borrowerRating?.count !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </Card.Body>
+              </Card>
             </Col>
           </Row>
-        </Card.Body>
-      </Card>
 
-      <h2 className="mb-3">Change Password</h2>
-      {pwError   && <Alert variant="danger">{pwError}</Alert>}
-      {pwSuccess && <Alert variant="success">{pwSuccess}</Alert>}
+          {/* Password Change Section */}
+          <Card className="border-0 shadow-sm modern-card mt-4">
+            <Card.Body className="p-4 p-md-5">
+              <div className="d-flex align-items-center mb-4">
+                <span className="me-3" style={{ fontSize: '1.5rem' }}>🔒</span>
+                <h4 className="fw-bold mb-0">Security Settings</h4>
+              </div>
 
-      <Form onSubmit={handlePasswordSubmit}>
-        <Form.Group className="mb-3" controlId="oldPassword">
-          <Form.Label>Old Password</Form.Label>
-          <Form.Control
-            type="password"
-            name="oldPassword"
-            value={passwords.oldPassword}
-            onChange={handlePasswordChange}
-            required
-          />
-        </Form.Group>
+              {pwError && (
+                <Alert variant="danger" className="rounded-pill mb-4">
+                  <div className="d-flex align-items-center">
+                    <span className="me-2">⚠️</span>
+                    {pwError}
+                  </div>
+                </Alert>
+              )}
+              {pwSuccess && (
+                <Alert variant="success" className="rounded-pill mb-4">
+                  <div className="d-flex align-items-center">
+                    <span className="me-2">✅</span>
+                    {pwSuccess}
+                  </div>
+                </Alert>
+              )}
 
-        <Form.Group className="mb-3" controlId="newPassword">
-          <Form.Label>New Password</Form.Label>
-          <Form.Control
-            type="password"
-            name="newPassword"
-            value={passwords.newPassword}
-            onChange={handlePasswordChange}
-            required
-          />
-        </Form.Group>
+              <Form onSubmit={handlePasswordSubmit}>
+                <Row className="g-4">
+                  <Col md={4}>
+                    <Form.Group controlId="oldPassword">
+                      <Form.Label className="fw-semibold">Current Password *</Form.Label>
+                      <PasswordInput
+                        name="oldPassword"
+                        value={passwords.oldPassword}
+                        onChange={handlePasswordChange}
+                        required
+                        className="rounded-pill px-4 py-3"
+                        style={{ fontSize: '1rem' }}
+                        placeholder="Enter current password"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group controlId="newPassword">
+                      <Form.Label className="fw-semibold">New Password *</Form.Label>
+                      <PasswordInput
+                        name="newPassword"
+                        value={passwords.newPassword}
+                        onChange={handlePasswordChange}
+                        required
+                        className="rounded-pill px-4 py-3"
+                        style={{ fontSize: '1rem' }}
+                        placeholder="Enter new password"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group controlId="confirmPassword">
+                      <Form.Label className="fw-semibold">Confirm Password *</Form.Label>
+                      <PasswordInput
+                        name="confirmPassword"
+                        value={passwords.confirmPassword}
+                        onChange={handlePasswordChange}
+                        required
+                        className="rounded-pill px-4 py-3"
+                        style={{ fontSize: '1rem' }}
+                        placeholder="Confirm new password"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
 
-        <Form.Group className="mb-3" controlId="confirmPassword">
-          <Form.Label>Confirm New Password</Form.Label>
-          <Form.Control
-            type="password"
-            name="confirmPassword"
-            value={passwords.confirmPassword}
-            onChange={handlePasswordChange}
-            required
-          />
-        </Form.Group>
-
-        <Button variant="dark" type="submit">Change Password</Button>
-      </Form>
+                <div className="d-grid mt-4">
+                  <Button 
+                    variant="outline-primary" 
+                    type="submit" 
+                    size="lg"
+                    className="rounded-pill py-3"
+                    style={{ fontSize: '1.1rem', fontWeight: '600' }}
+                  >
+                    🔐 Update Password
+                  </Button>
+                </div>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
     </Container>
   )
 }
