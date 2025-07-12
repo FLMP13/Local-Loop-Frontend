@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Container, Row, Col, Form, Button, Card, Alert } from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext"; // Import AuthContext to access user and token
 import axios from "axios";
@@ -47,9 +47,23 @@ export default function Payment() {
     };
     fetchPaymentData();
   }, [id]);
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="text-center my-5">
+        <Spinner animation="border" style={{ color: 'var(--brand)' }} />
+        <p className="mt-3 text-muted">Loading payment details...</p>
+      </div>
+    );
+  }
   if (error) return <Alert variant="danger">Error: {error}</Alert>;
-  if (!clientId) return <p>Loading PayPal...</p>;
+  if (!clientId) {
+    return (
+      <div className="text-center my-5">
+        <Spinner animation="border" style={{ color: 'var(--brand)' }} />
+        <p className="mt-3 text-muted">Loading PayPal...</p>
+      </div>
+    );
+  }
 
   return (
     <Container className="mt-5">
@@ -156,11 +170,8 @@ export default function Payment() {
                   </>
                 ) : (
                   <>
-                    <div
-                      className="rounded-circle bg-dark text-white d-flex justify-content-center align-items-center"
-                      style={{ width: 50, height: 50 }}
-                    >
-                      <strong>--</strong>
+                    <div className="text-center my-3">
+                      <Spinner animation="border" size="sm" style={{ color: 'var(--brand)' }} />
                     </div>
                     <Card.Title>Loading...</Card.Title>
                     <Card.Text>Loading transaction details...</Card.Text>

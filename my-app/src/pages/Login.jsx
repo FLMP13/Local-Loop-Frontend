@@ -4,6 +4,7 @@ import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios' 
 import { AuthContext } from '../context/AuthContext.jsx'
+import PasswordInput from '../components/PasswordInput'
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
@@ -72,8 +73,7 @@ export default function Login() {
 
             <Form.Group className="mb-3">
               <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
+              <PasswordInput
                 name="password"
                 value={credentials.password}
                 onChange={handleChange}
