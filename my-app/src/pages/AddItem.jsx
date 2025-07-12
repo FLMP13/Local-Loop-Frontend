@@ -46,103 +46,247 @@ export default function AddItem() {
  
     if (!user) {
         return (
-            <Container className="py-5">
-                <Alert variant="info" className="text-center">
-                    Please <Link to="/login">log in</Link> or <Link to="/create-profile">create a profile</Link> to add an item.
-                </Alert>
+            <Container fluid className="px-md-5" style={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
+                <div className="hero-section bg-light p-4 p-md-5 mb-4">
+                    <div className="row align-items-center justify-content-center">
+                        <div className="col-md-8 text-center">
+                            <h1 className="display-5 fw-bold mb-3">Add New Item</h1>
+                            <p className="lead text-muted mb-4">
+                                Please log in to start sharing your items with the community
+                            </p>
+                            <div className="d-flex gap-3 justify-content-center">
+                                <Button 
+                                    as={Link} 
+                                    to="/login" 
+                                    variant="primary" 
+                                    size="lg"
+                                    className="rounded-pill px-4"
+                                >
+                                    Log In
+                                </Button>
+                                <Button 
+                                    as={Link} 
+                                    to="/create-profile" 
+                                    variant="outline-primary" 
+                                    size="lg"
+                                    className="rounded-pill px-4"
+                                >
+                                    Create Profile
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </Container>
         );
     }
     
     return (
-        <Container className="py-5">
-            <Row className="justify-content-md-center">
-                <Col md={8} lg={6}>
-                    <Card className="shadow">
-                        <Card.Body>
-                            <h2 className="mb-4 text-center">Add Item</h2>
-                            {error && <Alert variant="danger">{error}</Alert>}
+        <Container fluid className="px-md-5" style={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
+            {/* Modern Hero Section */}
+            <div className="hero-section bg-light p-4 p-md-5 mb-4">
+                <div className="row align-items-center">
+                    <div className="col">
+                        <h1 className="display-5 fw-bold mb-3">Add New Item</h1>
+                        <p className="lead text-muted mb-0">
+                            Share your items with the community and start earning
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Modern Form Layout */}
+            <Row className="justify-content-center g-4">
+                <Col lg={8} xl={6}>
+                    <Card className="border-0 shadow-sm modern-card">
+                        <Card.Body className="p-4 p-md-5">
+                            {error && (
+                                <Alert variant="danger" className="rounded-pill mb-4">
+                                    <div className="d-flex align-items-center">
+                                        <span className="me-2">⚠️</span>
+                                        {error}
+                                    </div>
+                                </Alert>
+                            )}
+                            
                             <Form onSubmit={handleSubmit}>
-                                <Form.Group controlId="formTitle" className="mb-3">
-                                    <Form.Label>Title</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Enter item title"
-                                        value={title}
-                                        onChange={handleTitleChange}
-                                        required
-                                    />
-                                </Form.Group>
-    
-                                <Form.Group controlId="formDescription" className="mb-3">
-                                    <Form.Label>Description</Form.Label>
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={3}
-                                        placeholder="Enter item description"
-                                        value={description}
-                                        onChange={handleDescriptionChange}
-                                        required
-                                    />
-                                </Form.Group>
+                                {/* Item Details Section */}
+                                <div className="mb-5">
+                                    <h5 className="fw-bold mb-3 text-muted text-uppercase">Item Details</h5>
+                                    
+                                    <Form.Group controlId="formTitle" className="mb-4">
+                                        <Form.Label className="fw-semibold">Item Title *</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="What are you sharing?"
+                                            value={title}
+                                            onChange={handleTitleChange}
+                                            required
+                                            className="rounded-pill px-4 py-3"
+                                            style={{ fontSize: '1rem' }}
+                                        />
+                                    </Form.Group>
 
-                                <Form.Group controlId="formCategory" className="mb-3">
-                                    <Form.Label>Category</Form.Label>
-                                    <Form.Select
-                                        value={category}
-                                        onChange={handleCategoryChange}
-                                        required
-                                    >
-                                        <option value="">Select category</option>
-                                        {categories.map((cat, idx) => (
-                                            <option key={idx} value={cat}>{cat}</option>
-                                        ))}
-                                    </Form.Select>
-                                </Form.Group>
+                                    <Form.Group controlId="formDescription" className="mb-4">
+                                        <Form.Label className="fw-semibold">Description *</Form.Label>
+                                        <Form.Control
+                                            as="textarea"
+                                            rows={4}
+                                            placeholder="Describe your item, its condition, and any special instructions..."
+                                            value={description}
+                                            onChange={handleDescriptionChange}
+                                            required
+                                            className="rounded-3 px-4 py-3"
+                                            style={{ fontSize: '1rem', resize: 'none' }}
+                                        />
+                                    </Form.Group>
 
-                                <Form.Group controlId="formPrice" className="mb-3">
-                                    <Form.Label>Weekly Price</Form.Label>
-                                    <Form.Control
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        placeholder="Enter Weekly item price"
-                                        value={price}
-                                        onChange={handlePriceChange}
-                                        required
-                                    />
-                                </Form.Group>
-                                <Form.Group controlId="formImages" className="mb-3">
-                                    <Form.Label>Images (max 3)</Form.Label>
-                                    <Form.Control
-                                        type="file"
-                                        accept="image/*"
-                                        multiple
-                                        onChange={handleImageChange}
-                                        required
-                                    />
-                                    <Form.Text muted>
-                                        {images.length} image(s) selected. {images.length === 3 && "Maximum reached."}
-                                    </Form.Text>
-                                    <Row className="mt-2">
-                                        {imagePreviews.map((src, idx) => (
-                                             <Col xs={4} key={idx} className="mb-2">
-                                                <Image src={src} thumbnail style={{ width: '100%', height: '100px', objectFit: 'cover' }} alt={`Preview ${idx + 1}`} />
-                                            </Col>
-                                        ))}
+                                    <Row className="g-3">
+                                        <Col md={6}>
+                                            <Form.Group controlId="formCategory">
+                                                <Form.Label className="fw-semibold">Category *</Form.Label>
+                                                <Form.Select
+                                                    value={category}
+                                                    onChange={handleCategoryChange}
+                                                    required
+                                                    className="rounded-pill px-4 py-3"
+                                                    style={{ fontSize: '1rem' }}
+                                                >
+                                                    <option value="">Choose category</option>
+                                                    {categories.map((cat, idx) => (
+                                                        <option key={idx} value={cat}>{cat}</option>
+                                                    ))}
+                                                </Form.Select>
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={6}>
+                                            <Form.Group controlId="formPrice">
+                                                <Form.Label className="fw-semibold">Weekly Price *</Form.Label>
+                                                <div className="input-group">
+                                                    <span className="input-group-text bg-light border-end-0 rounded-start-pill px-4">€</span>
+                                                    <Form.Control
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        placeholder="0.00"
+                                                        value={price}
+                                                        onChange={handlePriceChange}
+                                                        required
+                                                        className="border-start-0 rounded-end-pill px-4 py-3"
+                                                        style={{ fontSize: '1rem' }}
+                                                    />
+                                                </div>
+                                                <Form.Text className="text-muted small">
+                                                    Set your weekly rental price
+                                                </Form.Text>
+                                            </Form.Group>
+                                        </Col>
                                     </Row>
-                                </Form.Group>
-                                <Form.Group controlId="formAvailability" className="mb-3">
-                                    <Form.Label>Availability</Form.Label>
-                                    <DayPicker
-                                        mode="range"
-                                        selected={availability}
-                                        onSelect={handleAvailabilityChange}
-                                    />
-                                </Form.Group>
-                                <div className="d-grid">
-                                    <Button variant="primary" type="submit" size="lg">
-                                        Add Item
+                                </div>
+
+                                {/* Images Section */}
+                                <div className="mb-5">
+                                    <h5 className="fw-bold mb-3 text-muted text-uppercase">Photos</h5>
+                                    
+                                    <Form.Group controlId="formImages">
+                                        <Form.Label className="fw-semibold">Item Photos *</Form.Label>
+                                        <div className="upload-area border border-2 border-dashed rounded-3 p-4 text-center bg-light">
+                                            <Form.Control
+                                                type="file"
+                                                accept="image/*"
+                                                multiple
+                                                onChange={handleImageChange}
+                                                required
+                                                className="d-none"
+                                                id="imageUpload"
+                                            />
+                                            <label htmlFor="imageUpload" className="cursor-pointer">
+                                                <div className="mb-3">
+                                                    <i className="bi bi-cloud-upload" style={{ fontSize: '2rem', color: '#6c757d' }}></i>
+                                                </div>
+                                                <p className="mb-2 fw-semibold">Click to upload photos</p>
+                                                <p className="text-muted small mb-0">
+                                                    Upload up to 3 images (JPG, PNG, GIF)
+                                                </p>
+                                            </label>
+                                        </div>
+                                        
+                                        {images.length > 0 && (
+                                            <div className="mt-3">
+                                                <div className="d-flex align-items-center mb-2">
+                                                    <span className="badge bg-primary rounded-pill me-2">
+                                                        {images.length} photo{images.length !== 1 ? 's' : ''} selected
+                                                    </span>
+                                                    {images.length === 3 && (
+                                                        <span className="text-muted small">Maximum reached</span>
+                                                    )}
+                                                </div>
+                                                <Row className="g-3">
+                                                    {imagePreviews.map((src, idx) => (
+                                                        <Col xs={4} key={idx}>
+                                                            <div className="position-relative">
+                                                                <Image 
+                                                                    src={src} 
+                                                                    className="w-100 rounded-3 border"
+                                                                    style={{ 
+                                                                        height: '120px', 
+                                                                        objectFit: 'cover' 
+                                                                    }} 
+                                                                    alt={`Preview ${idx + 1}`} 
+                                                                />
+                                                                <div className="position-absolute top-0 end-0 m-2">
+                                                                    <span className="badge bg-dark bg-opacity-75 rounded-circle" style={{ width: '24px', height: '24px', fontSize: '0.75rem' }}>
+                                                                        {idx + 1}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </Col>
+                                                    ))}
+                                                </Row>
+                                            </div>
+                                        )}
+                                    </Form.Group>
+                                </div>
+
+                                {/* Availability Section */}
+                                <div className="mb-5">
+                                    <h5 className="fw-bold mb-3 text-muted text-uppercase">Availability</h5>
+                                    
+                                    <Form.Group controlId="formAvailability">
+                                        <Form.Label className="fw-semibold">When is your item available?</Form.Label>
+                                        <p className="text-muted small mb-3">
+                                            Select the date range when your item will be available for borrowing
+                                        </p>
+                                        <div className="calendar-container bg-white border rounded-3 shadow-sm">
+                                            <DayPicker
+                                                mode="range"
+                                                selected={availability}
+                                                onSelect={handleAvailabilityChange}
+                                                disabled={{ before: new Date() }}
+                                            />
+                                        </div>
+                                    </Form.Group>
+                                </div>
+
+                                {/* Submit Section */}
+                                <div className="d-grid gap-3">
+                                    <Button 
+                                        variant="primary" 
+                                        type="submit" 
+                                        size="lg"
+                                        className="rounded-pill py-3"
+                                        style={{ fontSize: '1.1rem', fontWeight: '600' }}
+                                    >
+                                        🚀 Add Item to Community
+                                    </Button>
+                                    <Button 
+                                        as={Link}
+                                        to="/my-items"
+                                        variant="outline-secondary" 
+                                        size="lg"
+                                        className="rounded-pill py-3"
+                                    >
+                                        Cancel
                                     </Button>
                                 </div>
                             </Form>

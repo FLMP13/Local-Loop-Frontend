@@ -1,26 +1,34 @@
-/* Styles for the app */
+/* Modern Minimalistic Styles */
 
 body {
-  background-color: #3b854abd; /* dark green */
+  background-color: #ffffff; /* clean white background */
   margin: 0;
   padding: 0;
-  font-family: 'Arial', sans-serif;
-  color: #fff7d1;  /* beige */
-  margin: 0;
-  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  color: #333333;  /* dark gray text for better readability */
   line-height: 1.6;
 }
 
 :root {
-  --brand: #004d40;       
-  --brand-dark: #00332a;  
+  --brand: #00C851;        /* vibrant green */
+  --brand-dark: #00A144;   /* darker vibrant green */
+  --brand-light: #E8F8F0;  /* very light green for backgrounds */
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
+/* Modern Button Styles */
 .btn-dark,
 .btn-outline-dark {
   color: #fff;
   background-color: var(--brand);
   border-color: var(--brand);
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .btn-outline-dark {
@@ -35,6 +43,24 @@ body {
   background-color: var(--brand-dark);
   border-color: var(--brand-dark);
   color: #fff;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+.btn-primary {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--brand-dark);
+  border-color: var(--brand-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
 }
 
 .btn-outline-primary,
@@ -43,10 +69,9 @@ body {
   color: var(--brand) !important;
   border-color: var(--brand) !important;
   background-color: transparent !important;
-  height: 40px;
-  line-height: 40px;
-  padding-top: 0;
-  padding-bottom: 0;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .btn-outline-primary:hover,
@@ -58,9 +83,11 @@ body {
   background-color: var(--brand) !important;
   color: #fff !important;
   border-color: var(--brand-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
 }
 
-/* Fix for dropdown-toggle text color on open/hover/focus */
+/* Modern Navigation and Link Styles */
 .show > .dropdown-toggle,
 .btn-outline-primary.show,
 .btn-outline-primary:active,
@@ -71,9 +98,16 @@ body {
   border-color: var(--brand-dark) !important;
 }
 
+.navbar {
+  background-color: #ffffff !important;
+  box-shadow: var(--shadow);
+  border-bottom: 1px solid var(--border-color);
+}
+
 .navbar-light .navbar-brand,
 .navbar-light .navbar-nav .nav-link {
   color: var(--brand);
+  font-weight: 500;
 }
 
 .navbar-light .navbar-nav .nav-link:hover,
@@ -83,27 +117,43 @@ body {
 
 a {
   color: var(--brand);
+  text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 a:hover {
   color: var(--brand-dark);
+  text-decoration: none;
 }
 
-#root > nav > div > a > img {
-  width: 200px;
-  height: 200px;
-  background-color: #FEF6DC; 
-  border-radius: 50%;
+/* Modern Logo and Navigation Container Styles */
+.navbar-brand img {
+  width: 60px;
+  height: 60px;
+  background-color: var(--brand-light); 
+  border-radius: 12px;
+  padding: 8px;
+  transition: all 0.2s ease;
 }
 
-#root > nav > div > div.me-auto.navbar-nav > a {
+.navbar-brand img:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow);
+}
+
+.navbar .nav-link {
   display: flex;
   align-items: center;
-  gap: 80px;
-  border-radius: 50px;
-  padding: 40px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  background-color: #3b854aab;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin: 0 4px;
+  transition: all 0.2s ease;
+  background-color: transparent;
+}
+
+.navbar .nav-link:hover {
+  background-color: var(--brand-light);
 }
 
 .navbar .btn-group,
@@ -112,15 +162,699 @@ a:hover {
   vertical-align: middle;
   align-items: center;
   display: flex;
+  height: 40px;
+}
+
+/* Modern Card and Status Colors */
+.card {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.card-bg-requested    { background-color: #E3F2FD !important; border-left: 4px solid #2196F3 !important; }
+.card-bg-accepted     { background-color: #E8F5E8 !important; border-left: 4px solid var(--brand) !important; }
+.card-bg-paid         { background-color: #E0F7FA !important; border-left: 4px solid #00BCD4 !important; }
+.card-bg-rejected     { background-color: #FFEBEE !important; border-left: 4px solid #F44336 !important; }
+.card-bg-borrowed     { background-color: #E8EAF6 !important; border-left: 4px solid #3F51B5 !important; }
+.card-bg-returned     { background-color: #FFF8E1 !important; border-left: 4px solid #FFC107 !important; }
+.card-bg-completed    { background-color: #F5F5F5 !important; border-left: 4px solid #9E9E9E !important; }
+.card-bg-renegotiation{ background-color: #FFF3E0 !important; border-left: 4px solid #FF9800 !important; }
+.card-bg-retracted    { background-color: #FAFAFA !important; border-left: 4px solid #757575 !important; color: #757575 !important; }
+
+/* Modern Item Card Styles */
+.modern-item-card {
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.modern-item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--brand);
+}
+
+/* Modern Transaction List Cards */
+.modern-card {
+  transition: all 0.2s ease;
+  border-radius: 12px !important;
+  background: #ffffff;
+}
+
+.modern-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.modern-card .card-body {
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
-.card-bg-requested    { background-color: #bcdff1 !important; } /* vivid blue */
-.card-bg-accepted     { background-color: #7be495 !important; } /* vivid green */
-.card-bg-paid         { background-color: #5fd0e6 !important; } /* vivid cyan */
-.card-bg-rejected     { background-color: #ff8a8a !important; } /* vivid red */
-.card-bg-borrowed     { background-color: #7fa6f8 !important; } /* vivid blue */
-.card-bg-returned     { background-color: #ffe066 !important; } /* vivid yellow */
-.card-bg-completed    { background-color: #bdbdbd !important; } /* medium gray */
-.card-bg-renegotiation{ background-color: #ffe066 !important; } /* vivid yellow */
-.card-bg-retracted    { background-color: #bcdff1 !important; color: #6c757d !important; }
+.modern-card .card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+}
+
+/* Transaction card responsive improvements */
+@media (max-width: 576px) {
+  .modern-card .d-flex.gap-2 {
+    flex-direction: column;
+    gap: 0.5rem !important;
+  }
+  
+  .modern-card .flex-fill {
+    width: 100% !important;
+  }
+}
+
+/* Form Styles */
+.form-control,
+.form-select {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 0.2rem rgba(0, 200, 81, 0.25);
+}
+
+/* Alert Styles */
+.alert {
+  border-radius: 8px;
+  border: none;
+  box-shadow: var(--shadow);
+}
+
+/* Badge Styles */
+.badge {
+  border-radius: 6px;
+  font-weight: 500;
+  padding: 6px 12px;
+}
+
+/* Container and Layout */
+.container,
+.container-fluid {
+  background-color: #ffffff;
+}
+
+/* Modern Search Bar */
+.search-container {
+  background: linear-gradient(135deg, var(--brand-light) 0%, #ffffff 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow);
+}
+
+/* Modern Item Page Styles */
+.modern-image-gallery .main-image img {
+  transition: transform 0.3s ease;
+}
+
+.modern-image-gallery .main-image img:hover {
+  transform: scale(1.02);
+}
+
+.modern-item-details h1.display-5 {
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
+}
+
+.calendar-container .rdp {
+  --rdp-cell-size: 35px;
+  --rdp-accent-color: var(--brand);
+  --rdp-background-color: var(--brand-light);
+  margin: 0;
+}
+
+.calendar-container .rdp-months {
+  justify-content: center;
+}
+
+.calendar-container .rdp-day_selected {
+  background-color: var(--brand) !important;
+  color: white !important;
+}
+
+.calendar-container .rdp-day_range_middle {
+  background-color: var(--brand-light) !important;
+  color: var(--brand) !important;
+}
+
+.booking-summary {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sticky-top {
+  position: sticky;
+  z-index: 10;
+}
+
+/* Enhanced card hover effects */
+.modern-item-details .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Button improvements */
+.btn.rounded-pill {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.btn-lg.rounded-pill {
+  padding: 12px 24px;
+}
+
+/* Modern Transaction Page Styles */
+.modern-transaction-hero {
+  position: relative;
+}
+
+.modern-transaction-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand), var(--brand-dark));
+  border-radius: 2px;
+}
+
+/* Transaction Status Badge Improvements */
+.badge.mb-3 {
+  font-size: 1rem;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Transaction Card Improvements */
+.modern-transaction-hero + .card-bg-requested,
+.modern-transaction-hero + .card-bg-accepted,
+.modern-transaction-hero + .card-bg-paid,
+.modern-transaction-hero + .card-bg-rejected,
+.modern-transaction-hero + .card-bg-borrowed,
+.modern-transaction-hero + .card-bg-returned,
+.modern-transaction-hero + .card-bg-completed,
+.modern-transaction-hero + .card-bg-renegotiation,
+.modern-transaction-hero + .card-bg-retracted {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Action Buttons in Transaction Page */
+.btn.rounded-pill {
+  font-weight: 500;
+  padding: 8px 20px;
+  border-width: 2px;
+}
+
+.btn-lg.rounded-pill {
+  padding: 12px 32px;
+  font-size: 1.1rem;
+}
+
+/* Code Display Styling */
+code.bg-white {
+  background-color: #f8f9fa !important;
+  border: 1px solid var(--border-color);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  font-size: 1.1rem;
+}
+
+/* Calendar Container for Transaction Page */
+.calendar-container {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+/* Sticky sidebar improvements */
+@media (min-width: 992px) {
+  .sticky-top {
+    top: 2rem !important;
+  }
+}
+
+/* Mobile responsive improvements for transaction page */
+@media (max-width: 991px) {
+  .modern-transaction-hero h1 {
+    font-size: 2rem;
+  }
+  
+  .modern-transaction-hero .lead {
+    font-size: 1rem;
+  }
+  
+  .sticky-top {
+    position: static !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .modern-transaction-hero {
+    text-align: center;
+  }
+  
+  .modern-transaction-hero .col-auto {
+    margin-top: 1rem;
+    width: 100%;
+  }
+  
+  .modern-transaction-hero .d-flex {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem !important;
+  }
+  
+  .calendar-container {
+    padding: 0.5rem;
+  }
+  
+  .d-grid.gap-2.d-md-flex {
+    gap: 0.5rem !important;
+  }
+}
+
+/* Loading spinner improvements */
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Form improvements */
+.form-label {
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+}
+
+/* Navbar improvements */
+.navbar {
+  padding: 12px 0;
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Container improvements */
+.py-4 {
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
+}
+
+/* Zoomed-out container styles for less cramped appearance */
+.container-zoomed {
+  max-width: 1400px !important;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.container-fluid-zoomed {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.py-zoomed {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+/* Reduce card spacing for zoomed-out effect */
+.card-zoomed {
+  margin-bottom: 1rem !important;
+}
+
+.card-zoomed .card-body {
+  padding: 1rem !important;
+}
+
+/* Adjust row spacing */
+.row-zoomed {
+  margin-left: -0.75rem;
+  margin-right: -0.75rem;
+}
+
+.row-zoomed > * {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+/* Responsive adjustments for zoomed containers */
+@media (max-width: 768px) {
+  .container-zoomed,
+  .container-fluid-zoomed {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .py-zoomed {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+}
+
+/* Sticky adjustments for zoomed layout */
+.sticky-top-zoomed {
+  top: 1rem !important;
+}
+
+/* Hero section adjustments for zoomed layout */
+.modern-transaction-hero {
+  margin-bottom: 1.5rem !important;
+}
+
+.modern-transaction-hero h1 {
+  font-size: 2.25rem !important;
+}
+
+/* Calendar container adjustments for zoomed layout */
+.calendar-container {
+  padding: 0.75rem !important;
+}
+
+/* Image Gallery Modal Styles */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.image-modal-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 60px 80px 60px 80px;
+}
+
+.image-modal img {
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: block;
+  /* Fit image within viewport while maintaining aspect ratio */
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.image-modal-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10001;
+}
+
+.image-modal-nav:hover {
+  background-color: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.image-modal-prev {
+  left: 20px;
+}
+
+.image-modal-next {
+  right: 20px;
+}
+
+.image-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10001;
+}
+
+.image-modal-close:hover {
+  background-color: white;
+  transform: scale(1.1);
+}
+
+.image-modal-counter {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  z-index: 10001;
+}
+
+/* Cursor pointer for clickable images */
+.modern-image-gallery img {
+  cursor: pointer;
+}
+
+.modern-image-gallery .main-image img {
+  cursor: pointer;
+}
+
+/* Mobile responsive modal */
+@media (max-width: 768px) {
+  .image-modal-content {
+    padding: 40px 20px 40px 20px;
+  }
+  
+  .image-modal-nav {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  .image-modal-prev {
+    left: 10px;
+  }
+  
+  .image-modal-next {
+    right: 10px;
+  }
+  
+  .image-modal-close {
+    top: 10px;
+    right: 10px;
+    width: 35px;
+    height: 35px;
+    font-size: 1.2rem;
+  }
+  
+  .image-modal-counter {
+    bottom: 10px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+}
+
+/* Empty state styling */
+.bi-inbox::before {
+  content: "\f4a7";
+}
+
+/* Add Item Page Styles */
+.upload-area {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.upload-area:hover {
+  border-color: var(--brand) !important;
+  background-color: var(--brand-light) !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Form input improvements */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 0.2rem rgba(0, 200, 81, 0.25);
+}
+
+.input-group-text {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Calendar container improvements */
+.calendar-container {
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-container .rdp {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.calendar-container .rdp-months {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.calendar-container .rdp-month {
+  width: 100%;
+  max-width: 450px;
+  margin: 0;
+}
+
+.calendar-container .rdp-table {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.calendar-container .rdp-head_cell {
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0.75rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+.calendar-container .rdp-cell {
+  width: 14.28%;
+  text-align: center;
+}
+
+.calendar-container .rdp-day {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin: 0.125rem;
+}
+
+.calendar-container .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+  background-color: var(--brand-light);
+  color: var(--brand);
+}
+
+.calendar-container .rdp-day_selected {
+  background-color: var(--brand) !important;
+  color: white !important;
+}
+
+.calendar-container .rdp-day_range_start,
+.calendar-container .rdp-day_range_end {
+  background-color: var(--brand) !important;
+  color: white !important;
+}
+
+.calendar-container .rdp-day_range_middle {
+  background-color: var(--brand-light) !important;
+  color: var(--brand) !important;
+}
+
+.calendar-container .rdp-day_disabled {
+  opacity: 0.3;
+}
+
+.calendar-container .rdp-caption {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-container .rdp-nav_button {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: white;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.calendar-container .rdp-nav_button:hover {
+  background-color: var(--brand-light);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.bi-cloud-upload::before {
+  content: "\f1c6";
+}

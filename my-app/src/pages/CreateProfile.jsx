@@ -5,11 +5,14 @@ import {
   Row,
   Col,
   Form,
-  Button
+  Button,
+  Alert,
+  Spinner
 } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
 import axios from 'axios'   
+import PasswordInput from '../components/PasswordInput'
 
 export default function CreateProfile() {
   const { login } = useContext(AuthContext)
@@ -24,6 +27,7 @@ export default function CreateProfile() {
     profilePic: null
   })
   const [error, setError] = useState('')  
+  const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef()
   const navigate = useNavigate()   
 
@@ -39,14 +43,13 @@ export default function CreateProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')                                             // clear previous error
+    setIsLoading(true)
 
     // build FormData including file
     const data = new FormData()
     data.append('firstName', form.firstName)
     data.append('lastName',  form.lastName)
-    if (form.nickname) {
-      data.append('nickname',  form.nickname)
-    }
+    data.append('nickname',  form.nickname || form.firstName) // Use firstName as fallback for nickname
     data.append('email',     form.email)
     data.append('password',  form.password)
     data.append('zipCode',   form.zipCode)
@@ -56,32 +59,44 @@ export default function CreateProfile() {
     }
 
     try {
+      console.log('Submitting form data:', form)
+      console.log('FormData entries:')
+      for (let [key, value] of data.entries()) {
+        console.log(key, value)
+      }
+      
       // POST to signup endpoint
       const res = await axios.post(
         '/api/auth/signup',
         data
       )
-      console.log(res.data)
+      console.log('Signup response:', res.data)
       
       // If signup returns token and user data, automatically log in the user
       if (res.data.token && res.data.user) {
+        console.log('Auto-logging in user:', res.data.user)
         login({
           token: res.data.token,
           user: res.data.user
         })
+        console.log('Navigating to home page...')
         // Navigate to home page after successful signup and login
         navigate('/')
       } else {
+        console.log('No token/user in response, redirecting to login')
         // If no token returned, navigate to login page
         navigate('/login')
       }
     } catch (err) {
-      console.error(err)
+      console.error('Signup error:', err)
+      console.error('Error response:', err.response?.data)
       // show error message
       setError(
         err.response?.data?.error ||
         'Failed to create profile. Please try again.'
       )
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -115,6 +130,13 @@ export default function CreateProfile() {
       <Row className="justify-content-center">
         <Col md={8} lg={6}>
           <h1 className="mb-4 text-center">Create Profile</h1>
+          
+          {error && (
+            <Alert variant="danger" className="mb-4">
+              {error}
+            </Alert>
+          )}
+          
           <Form onSubmit={handleSubmit}>
 
             {/* Profile Picture Circle */}
@@ -191,8 +213,7 @@ export default function CreateProfile() {
 
             <Form.Group className="mb-3">
               <Form.Label>Password *</Form.Label>
-              <Form.Control
-                type="password"
+              <PasswordInput
                 name="password"
                 value={form.password}
                 onChange={handleChange}
@@ -227,8 +248,24 @@ export default function CreateProfile() {
             </Form.Group>
 
             <div className="d-grid">
-              <Button variant="dark" size="lg" type="submit">
-                Create Profile
+              <Button 
+                variant="dark" 
+                size="lg" 
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  backgroundColor: isLoading ? '#ffc107' : undefined,
+                  borderColor: isLoading ? '#ffc107' : undefined
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm text-white me-2" role="status"></span>
+                    Creating Profile...
+                  </>
+                ) : (
+                  'Create Profile'
+                )}
               </Button>
             </div>
           </Form>

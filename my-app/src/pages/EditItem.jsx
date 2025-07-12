@@ -6,6 +6,7 @@ import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Alert from 'react-bootstrap/Alert';
+import Spinner from 'react-bootstrap/Spinner';
 
 // Needs to be adapted to categories
 const categories = [
@@ -30,7 +31,14 @@ export default function EditItem() {
     handleSubmit
   } = useEditItem();
 
-  if (loading) return <p>Loading…</p>;
+  if (loading) {
+    return (
+      <div className="text-center my-5">
+        <Spinner animation="border" style={{ color: 'var(--brand)' }} />
+        <p className="mt-3 text-muted">Loading item...</p>
+      </div>
+    );
+  }
   if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
@@ -65,6 +73,7 @@ export default function EditItem() {
             mode="range"
             selected={availability}
             onSelect={handleAvailabilityChange}
+            disabled={{ before: new Date() }}
           />
         </Form.Group>
         <Button type="submit">Save Changes</Button>
