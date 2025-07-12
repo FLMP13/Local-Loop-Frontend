@@ -9,13 +9,13 @@ import SimpleFilter from './SimpleFilter';
 import Badge from 'react-bootstrap/Badge';
 
 const STATUS_COLORS = {
-  requested: 'secondary',
+  requested: 'warning',
   accepted: 'success',
   paid: 'info',
   rejected: 'danger',
   borrowed: 'primary',
   returned: 'warning',
-  completed: 'dark',
+  completed: 'success',
   renegotiation_requested: 'warning',
   retracted: 'secondary'
 }; // should match the colors in ShowTransaction.jsx
@@ -24,7 +24,15 @@ function StatusBadge({ status }) {
   const color = STATUS_COLORS[status] || 'secondary';
   const label = status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
   return (
-    <Badge bg={color} style={{ fontSize: '1rem', padding: '0.5em 1em' }}>
+    <Badge 
+      bg={color} 
+      style={{ 
+        fontSize: '0.85rem', 
+        padding: '0.5em 1em',
+        borderRadius: '25px',
+        fontWeight: '600'
+      }}
+    >
       {label}
     </Badge>
   );
@@ -129,30 +137,33 @@ function ActionButtons({ transaction, user, onAction }) {
   // Lender: Accept/Decline/Renegotiate if requested
   if (user?.id === transaction.lender?._id && transaction.status === 'requested') {
     return (
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2 flex-wrap">
         <Button
           variant="success"
           size="sm"
           disabled={updating}
           onClick={e => { e.stopPropagation(); handleAction('accept'); }}
+          className="flex-fill rounded-pill"
         >
-          Accept
+          ✓ Accept
         </Button>
         <Button
           variant="danger"
           size="sm"
           disabled={updating}
           onClick={e => { e.stopPropagation(); handleAction('decline'); }}
+          className="flex-fill rounded-pill"
         >
-          Decline
+          ✗ Decline
         </Button>
         <Button
           variant="warning"
           size="sm"
           disabled={updating}
           onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
+          className="w-100 mt-2 rounded-pill"
         >
-          Renegotiate
+          ⟲ Renegotiate
         </Button>
       </div>
     );
@@ -167,16 +178,18 @@ function ActionButtons({ transaction, user, onAction }) {
           size="sm"
           disabled={updating}
           onClick={e => { e.stopPropagation(); handleAction('renegotiation/accept'); }}
+          className="flex-fill rounded-pill"
         >
-          Accept
+          ✓ Accept
         </Button>
         <Button
           variant="danger"
           size="sm"
           disabled={updating}
           onClick={e => { e.stopPropagation(); handleAction('renegotiation/decline'); }}
+          className="flex-fill rounded-pill"
         >
-          Decline
+          ✗ Decline
         </Button>
       </div>
     );
@@ -190,19 +203,21 @@ function ActionButtons({ transaction, user, onAction }) {
     return (
       <div className="d-flex gap-2">
         <Button
-          variant="secondary"
+          variant="primary"
           size="sm"
           onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}/edit`); }}
+          className="flex-fill rounded-pill"
         >
-          Edit
+          ✏️ Edit
         </Button>
         <Button
           variant="danger"
           size="sm"
           disabled={updating}
           onClick={e => { e.stopPropagation(); handleDeleteClick(); }}
+          className="flex-fill rounded-pill"
         >
-          Delete
+          🗑️ Delete
         </Button>
       </div>
     );
@@ -215,8 +230,9 @@ function ActionButtons({ transaction, user, onAction }) {
         variant="primary"
         size="sm"
         onClick={e => { e.stopPropagation(); navigate(`/payment/${transaction._id}`); }}
+        className="w-100 rounded-pill"
       >
-        Pay
+        💳 Pay Now
       </Button>
     );
   }
@@ -228,8 +244,9 @@ function ActionButtons({ transaction, user, onAction }) {
         variant="success"
         size="sm"
         onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showPickup=1`); }}
+        className="w-100 rounded-pill"
       >
-        Enter Code after Item was picked up
+        🔑 Enter Pickup Code
       </Button>
     );
   }
@@ -237,22 +254,24 @@ function ActionButtons({ transaction, user, onAction }) {
   // Lender: Generate Code and Force Return if borrowed
   if (user?.id === transaction.lender?._id && transaction.status === 'borrowed') {
     return (
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2 flex-wrap">
         <Button
           variant="info"
           size="sm"
           disabled={updating}
           onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
+          className="flex-fill rounded-pill"
         >
-          Generate Code
+          🔐 Generate Code
         </Button>
         <Button
-          variant="danger"
+          variant="outline-danger"
           size="sm"
           disabled={updating}
           onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
+          className="flex-fill rounded-pill"
         >
-          Force Return
+          ⚠️ Force Return
         </Button>
       </div>
     );
@@ -265,8 +284,9 @@ function ActionButtons({ transaction, user, onAction }) {
         variant="success"
         size="sm"
         onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showReturn=1`); }}
+        className="w-100 rounded-pill"
       >
-        Enter the Code after returning the Item
+        📦 Enter Return Code
       </Button>
     );
   }
@@ -275,11 +295,12 @@ function ActionButtons({ transaction, user, onAction }) {
   if (user?.id === transaction.borrower?._id && transaction.status === 'paid') {
     return (
       <Button
-        variant="danger"
+        variant="outline-danger"
         size="sm"
         onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
+        className="w-100 rounded-pill"
       >
-        Force Pick Up
+        ⚠️ Force Pick Up
       </Button>
     );
   }
@@ -366,94 +387,131 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
   }
 
   return (
-    <Container className="py-5">
-      <h2 className="mb-4">{title}</h2>
-      <SimpleFilter 
-        filter={filter} 
-        setFilter={setFilter} 
-        statusOptions={statusOptions} 
-      />
-      
-      {filteredTransactions.length === 0 ? (
-        <p>No transactions found.</p>
-      ) : (
-        filteredTransactions.map(tx => {
-          const itemTitle = tx.item?.title || 'Unknown Item';
-          const borrowerName = tx.borrower?.nickname || tx.borrower?.email || 
-                              `${tx.borrower?.firstName || ''} ${tx.borrower?.lastName || ''}`.trim() || 'Unknown';
-          const lenderName = tx.lender?.nickname || tx.lender?.email || 
-                            `${tx.lender?.firstName || ''} ${tx.lender?.lastName || ''}`.trim() || 
-                            tx.item?.owner?.nickname || tx.item?.owner?.email || 'Unknown';
-          const requestDate = tx.requestDate ? new Date(tx.requestDate).toLocaleString() : 'Unknown';
+    <div className="modern-container">
+      <Container fluid className="px-md-5">
+        {/* Hero Section */}
+        <div className="hero-section bg-light p-4 p-md-5 mb-4">
+          <div className="row align-items-center">
+            <div className="col">
+              <h1 className="display-5 fw-bold mb-3">{title}</h1>
+              <p className="lead text-muted mb-0">
+                Manage your lending transactions and track item statuses
+              </p>
+            </div>
+          </div>
+        </div>
 
-          let cardBg = '';
-          switch (tx.status) {
-            case 'requested':
-              cardBg = 'card-bg-requested';
-              break;
-            case 'accepted':
-              cardBg = 'card-bg-accepted';
-              break;
-            case 'paid':
-              cardBg = 'card-bg-paid';
-              break;
-            case 'rejected':
-              cardBg = 'card-bg-rejected';
-              break;
-            case 'borrowed':
-              cardBg = 'card-bg-borrowed';
-              break;
-            case 'returned':
-              cardBg = 'card-bg-returned';
-              break;
-            case 'completed':
-              cardBg = 'card-bg-completed';
-              break;
-            case 'renegotiation_requested':
-              cardBg = 'card-bg-renegotiation';
-              break;
-            case 'retracted':
-              cardBg = 'card-bg-retracted text-muted';
-              break;
-            default:
-              cardBg = 'card-bg-requested';
-          }
+        {/* Filter Section */}
+        <div className="mb-4">
+          <SimpleFilter 
+            filter={filter} 
+            setFilter={setFilter} 
+            statusOptions={statusOptions} 
+          />
+        </div>
+        
+        {/* Transactions List */}
+        {filteredTransactions.length === 0 ? (
+          <div className="text-center py-5">
+            <div className="mb-4">
+              <i className="bi bi-inbox" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
+            </div>
+            <h5 className="text-muted mb-3">No transactions found</h5>
+            <p className="text-muted">
+              {filter.status || filter.name || filter.maxPrice 
+                ? 'Try adjusting your filters to see more results.' 
+                : 'You don\'t have any lending transactions yet.'}
+            </p>
+          </div>
+        ) : (
+          <div className="row g-4">
+            {filteredTransactions.map(tx => {
+              const itemTitle = tx.item?.title || 'Unknown Item';
+              const borrowerName = tx.borrower?.nickname || tx.borrower?.email || 
+                                  `${tx.borrower?.firstName || ''} ${tx.borrower?.lastName || ''}`.trim() || 'Unknown';
+              const lenderName = tx.lender?.nickname || tx.lender?.email || 
+                                `${tx.lender?.firstName || ''} ${tx.lender?.lastName || ''}`.trim() || 
+                                tx.item?.owner?.nickname || tx.item?.owner?.email || 'Unknown';
+              const requestDate = tx.requestDate ? new Date(tx.requestDate).toLocaleDateString() : 'Unknown';
+              const requestTime = tx.requestDate ? new Date(tx.requestDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
-          // Use text-dark for all cards for readability, except for completed/retracted (muted)
-          const cardText = (tx.status === 'completed' || tx.status === 'retracted') ? 'text-muted' : 'text-dark';
+              return (
+                <div key={tx._id} className="col-lg-6 col-xl-4">
+                  <Card 
+                    className="modern-card h-100 border-0 shadow-sm"
+                    style={{ 
+                      cursor: 'pointer',
+                      opacity: ['completed', 'rejected', 'retracted'].includes(tx.status) ? 0.6 : 1,
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => navigate(`/transactions/${tx._id}`)}
+                  >
+                    <Card.Body className="p-4">
+                      {/* Header with item title and status */}
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <div className="flex-grow-1 me-3">
+                          <h5 className="card-title mb-2 fw-bold">{itemTitle}</h5>
+                          <StatusBadge status={tx.status} />
+                        </div>
+                        {tx.item?.images && tx.item.images.length > 0 && (
+                          <div 
+                            className="flex-shrink-0"
+                            style={{ width: '60px', height: '60px' }}
+                          >
+                            <img
+                              src={`/api/items/${tx.item._id}/image/0`}
+                              alt=""
+                              className="rounded"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
 
-          return (
-            <Card
-              key={tx._id}
-              className={`mb-3 ${cardText} ${cardBg}`}
-              style={tx.status === 'retracted' ? { opacity: 0.6, cursor: 'pointer' } : { cursor: 'pointer' }}
-              onClick={() => navigate(`/transactions/${tx._id}`)}
-            >
-              <Card.Body>
-                <div className="d-flex justify-content-between align-items-start">
-                  <div>
-                    <Card.Title>{itemTitle}</Card.Title>
-                    <Card.Text>
-                      <StatusBadge status={tx.status} /><br />
-                      Borrower: {borrowerName}<br />
-                      Lender: {lenderName}<br />
-                      Requested: {requestDate}
-                    </Card.Text>
-                  </div>
-                  <div className="text-end">
-                    {/* Action buttons matching ShowTransaction.jsx */}
-                    <ActionButtons
-                      transaction={tx}
-                      user={user}
-                      onAction={fetchTransactions} // Refresh transactions after action
-                    />
-                  </div>
+                      {/* Transaction details */}
+                      <div className="mb-3">
+                        <div className="text-muted small mb-2">
+                          <div className="d-flex justify-content-between">
+                            <span>Borrower:</span>
+                            <span className="fw-medium text-dark">{borrowerName}</span>
+                          </div>
+                          <div className="d-flex justify-content-between">
+                            <span>Lender:</span>
+                            <span className="fw-medium text-dark">{lenderName}</span>
+                          </div>
+                          <div className="d-flex justify-content-between">
+                            <span>Requested:</span>
+                            <span className="fw-medium text-dark">{requestDate} {requestTime}</span>
+                          </div>
+                          {tx.item?.price && (
+                            <div className="d-flex justify-content-between">
+                              <span>Price:</span>
+                              <span className="fw-medium text-dark">€{tx.item.price}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="mt-auto" onClick={e => e.stopPropagation()}>
+                        <ActionButtons
+                          transaction={tx}
+                          user={user}
+                          onAction={fetchTransactions}
+                        />
+                      </div>
+                    </Card.Body>
+                  </Card>
                 </div>
-              </Card.Body>
-            </Card>
-          );
-        })
-      )}
-    </Container>
+              );
+            })}
+          </div>
+        )}
+      </Container>
+    </div>
   );
 }
