@@ -1,5 +1,5 @@
-// src/pages/Login.jsx
-import React, { useState, useRef } from 'react'
+// src/pages/CreateProfile.jsx
+import React, { useState, useRef, useContext } from 'react'
 import {
   Container,
   Row,
@@ -8,9 +8,11 @@ import {
   Button
 } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
+import { AuthContext } from '../context/AuthContext'
 import axios from 'axios'   
 
 export default function CreateProfile() {
+  const { login } = useContext(AuthContext)
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -60,8 +62,19 @@ export default function CreateProfile() {
         data
       )
       console.log(res.data)
-      // on success, navigate to login or home
-      navigate('/login')
+      
+      // If signup returns token and user data, automatically log in the user
+      if (res.data.token && res.data.user) {
+        login({
+          token: res.data.token,
+          user: res.data.user
+        })
+        // Navigate to home page after successful signup and login
+        navigate('/')
+      } else {
+        // If no token returned, navigate to login page
+        navigate('/login')
+      }
     } catch (err) {
       console.error(err)
       // show error message

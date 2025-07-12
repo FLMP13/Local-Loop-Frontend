@@ -35,14 +35,15 @@ export default function PaymentSuccess() {
   return (
     <Container className="mt-5 d-flex justify-content-center">
       <Card style={{ maxWidth: "500px", padding: "2rem", textAlign: "center" }}>
-        <h2 className="text-success mb-3">🎉 Vielen Dank für Ihre Zahlung!</h2>
-        <p>Die Zahlung für <strong>{transaction.itemTitle}</strong> wurde erfolgreich abgeschlossen.</p>
+        <h2 className="text-success mb-3">Thank you for your payment!</h2>
+        <p>The payment for <strong>{transaction.itemTitle}</strong> was completed successfully.</p>
+        <p>You can now get your pick-up code in your transaction details, which you can give the lender of your item after receiving it.</p>
         <p>
-          Verliehen von: <strong>{transaction.lender}</strong><br />
-          Betrag: <strong>€{transaction.itemPrice}</strong>
+          Lent by: <strong>{transaction.lender}</strong><br />
+          Amount: <strong>€{transaction.itemPrice}</strong>
         </p>
-        <Link to="/my-borrowings" className="btn btn-primary mt-3">
-          ➜ Zu MyBorrowings
+        <Link to={`/transactions/${transactionId}`} className="btn btn-primary mt-3">
+          ➜ Go to Transaction
         </Link>
       </Card>
     </Container>

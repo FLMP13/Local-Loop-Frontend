@@ -1,8 +1,8 @@
 //  Top Level Layout Component including navigation and routes
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css'
-import React, { useContext } from 'react'
-import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import React, { useContext, useEffect, useState, createContext } from 'react'
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { BrowserRouter as Router } from 'react-router-dom';
 import Container from 'react-bootstrap/Container';
 import Navbar from 'react-bootstrap/Navbar';
@@ -26,96 +26,243 @@ import UserReviews from './pages/UserReview.jsx';
 import logo from './assets/logo.png'
 import { AuthContext } from './context/AuthContext.jsx' 
 import ShowTransaction from './pages/ShowTransaction';
+import EditTransaction from './pages/EditTransaction.jsx';
+import { Search } from 'react-bootstrap-icons';
+
+export const CounterContext = createContext();
+
+function NotificationBubble({ count }) {
+  if (!count || count < 1) return null;
+  return (
+    <span style={{
+      background: 'red',
+      color: 'white',
+      borderRadius: '50%',
+      width: '1.7em',
+      height: '1.7em',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '0.9em',
+      position: 'absolute',
+      top: '-10px',
+      right: '-18px', // move further right
+      zIndex: 2,
+      fontWeight: 'bold',
+      boxShadow: '0 0 0 2px #fff7dc'
+    }}>
+      {count}
+    </span>
+  );
+}
 
 export default function App() {
-  const { user, logout } = useContext(AuthContext); // <-- get logout from context
+  const { user, logout } = useContext(AuthContext);
+  const [borrowingsCount, setBorrowingsCount] = useState(0);
+  const [lendingsCount, setLendingsCount] = useState(0);
+  const location = useLocation();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/'); // Redirect to home after logout
+  // Helper function to check if a transaction has active buttons for the user
+  const hasActiveButtons = (transaction, user) => {
+    if (!user || !transaction) return false;
+    
+    // Lender: Accept/Decline/Renegotiate if requested
+    if (user.id === transaction.lender?._id && transaction.status === 'requested') {
+      return true;
+    }
+    
+    // Borrower: Accept/Decline if renegotiation_requested
+    if (user.id === transaction.borrower?._id && transaction.status === 'renegotiation_requested') {
+      return true;
+    }
+    
+    // Borrower: Edit/Delete for requested (only when not renegotiation_requested)
+    if (user.id === transaction.borrower?._id && transaction.status === 'requested') {
+      return true;
+    }
+    
+    // Borrower: Pay button for accepted
+    if (user.id === transaction.borrower?._id && transaction.status === 'accepted') {
+      return true;
+    }
+    
+    // Lender: Enter pickup code after payment
+    if (user.id === transaction.lender?._id && transaction.status === 'paid') {
+      return true;
+    }
+    
+    // Lender: Generate/View Return Code and Force Return if borrowed
+    if (user.id === transaction.lender?._id && transaction.status === 'borrowed') {
+      return true;
+    }
+    
+    // Borrower: Enter the code after returning the item
+    if (user.id === transaction.borrower?._id && transaction.status === 'borrowed') {
+      return true;
+    }
+    
+    // Borrower: Force Pick Up if paid
+    if (user.id === transaction.borrower?._id && transaction.status === 'paid') {
+      return true;
+    }
+    
+    return false;
   };
 
+  // Fetch counters function
+  const fetchCounts = async () => {
+    if (!user) {
+      setBorrowingsCount(0);
+      setLendingsCount(0);
+      return;
+    }
+    const token = localStorage.getItem('token');
+    const [borrowingsRes, lendingsRes] = await Promise.all([
+      fetch('/api/transactions/borrowings', { headers: { Authorization: `Bearer ${token}` } }),
+      fetch('/api/transactions/lendings', { headers: { Authorization: `Bearer ${token}` } }),
+    ]);
+    const borrowings = borrowingsRes.ok ? await borrowingsRes.json() : [];
+    const lendings = lendingsRes.ok ? await lendingsRes.json() : [];
+    
+    // Count transactions with active buttons instead of just open statuses
+    setBorrowingsCount(borrowings.filter(t => hasActiveButtons(t, user)).length);
+    setLendingsCount(lendings.filter(t => hasActiveButtons(t, user)).length);
+  };
+
+  // Fetch counters on user change and on every route change
+  useEffect(() => {
+    fetchCounts();
+    // eslint-disable-next-line
+  }, [user, location.pathname]);
+
+  // Provide fetchCounts to children via context
   return (
-    <>
-      <Navbar expand="lg" style={{ backgroundColor: '#fff7dc' }}>
-        <Container>
-          <Navbar.Brand as={Link} to="/">
-            <img
-              src={logo}
-              alt="Logo"
-              height="130"
-              className="d-inline-block align-top"
-            />
-          </Navbar.Brand>
-          <Nav className="me-auto">
-            <ButtonGroup>
-              <NavDropdown
-                title="My Items"
-                id="my-items-dropdown"
-                as={Button}
-                variant="outline-primary"
-                className="me-2"
-                style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
-              >
-                <NavDropdown.Item as={Link} to="/my-items">
-                  All My Items
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/my-borrowings">
-                  My Borrowings
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/my-lendings">
-                  My Lendings
-                </NavDropdown.Item>
-              </NavDropdown>
-              <Button
-                as={Link}
-                to="/add-item"
-                variant="outline-primary"
-                className="ms-2"
-                style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
-              >
-                Add Item
-              </Button>
-            </ButtonGroup>
-          </Nav>
-          <Nav className="ms-auto">
+    <CounterContext.Provider value={{ fetchCounts }}>
+      <>
+        <Navbar expand="lg" style={{ backgroundColor: '#fff7dc' }}>
+          <Container>
+            <Navbar.Brand as={Link} to="/">
+              <img
+                src={logo}
+                alt="Logo"
+                height="130"
+                className="d-inline-block align-top"
+              />
+            </Navbar.Brand>
             <Button
               as={Link}
-              to={user ? '/profile' : '/login'}
-              variant="dark"
-              className="ms-auto me-2"
+              to="/"
+              variant="outline-primary"
+              className="ms-2 me-2"
+              style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd', display: 'flex', alignItems: 'center'}}
             >
-              {user ? 'My Profile' : 'Log In'}
+              Browse Items
+              <Search style={{ marginLeft: '0.3em', position: 'relative'}} />
             </Button>
-            {user && (
+            <Nav className="me-auto">
+              <ButtonGroup>
+                {user ? (
+                  <NavDropdown
+                    title={
+                      <span style={{ position: 'relative', display: 'inline-block'}}>
+                        My Items
+                        <span style={{
+                          position: 'absolute',
+                          top: '-0.3em',
+                          right: '-1em',
+                          pointerEvents: 'none'
+                        }}>
+                          <NotificationBubble count={borrowingsCount + lendingsCount} />
+                        </span>
+                      </span>
+                    }
+                    id="my-items-dropdown"
+                    as={Button}
+                    variant="outline-primary"
+                    className="me-2"
+                    style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
+                  >
+                    <NavDropdown.Item as={Link} to="/my-items">
+                      My Items
+                    </NavDropdown.Item>
+                    <NavDropdown.Item as={Link} to="/my-borrowings" style={{ position: 'relative' }}>
+                      My Borrowings
+                      <NotificationBubble count={borrowingsCount} />
+                    </NavDropdown.Item>
+                    <NavDropdown.Item as={Link} to="/my-lendings" style={{ position: 'relative' }}>
+                      My Lendings
+                      <NotificationBubble count={lendingsCount} />
+                    </NavDropdown.Item>
+                  </NavDropdown>
+                ) : (
+                  <Button
+                    as={Link}
+                    to="/my-items"
+                    variant="outline-primary"
+                    className="me-2"
+                    style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd', height: '100%' }}
+                  >
+                    My Items
+                  </Button>
+                )}
+                <Button
+                  as={Link}
+                  to="/add-item"
+                  variant="outline-primary"
+                  className="ms-2"
+                  style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd', display: 'flex', alignItems: 'center'}}
+                >
+                  Add Item <span aria-hidden="true" style={{ fontSize: '1.2em', marginLeft: '0.2em' }}>+</span>
+                </Button>
+              </ButtonGroup>
+            </Nav>
+            <Nav className="ms-auto">
               <Button
-                variant="outline-secondary"
-                className="ms-2"
-                onClick={handleLogout}
+                as={Link}
+                to={user ? '/profile' : '/login'}
+                variant="dark"
+                className="ms-auto me-2"
               >
-                Logout
+                {user ? 'My Profile' : 'Log In'}
               </Button>
-            )}
-          </Nav>
-        </Container>
-      </Navbar>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/add-item" element={<AddItem />} />
-        <Route path="/my-items" element={<MyItems />} />
-        <Route path="/my-borrowings" element={<MyBorrowings />} />
-        <Route path="/my-lendings" element={<MyLendings />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/create-profile" element={<CreateProfile />} />
-        <Route path="/profile" element={<MyProfile />} />
-        <Route path="/items/:id" element={<ShowItem />} />
-        <Route path="/items/:id/edit" element={<EditItem />} />
-        <Route path="/transactions/:id" element={<ShowTransaction />} />
-        <Route path="/payment/:id" element={<Payment />} />
-        <Route path="/payment-success/:transactionId" element={<PaymentSuccess />} />
-        <Route path="/users/:userId/reviews" element={<UserReviews />} />
-      </Routes>
-    </>
+              {user && (
+                <Button
+                  variant="outline-secondary"
+                  className="ms-2"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+              )}
+            </Nav>
+          </Container>
+        </Navbar>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/add-item" element={<AddItem />} />
+          <Route path="/my-items" element={<MyItems />} />
+          <Route path="/my-borrowings" element={<MyBorrowings />} />
+          <Route path="/my-lendings" element={<MyLendings />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/create-profile" element={<CreateProfile />} />
+          <Route path="/profile" element={<MyProfile />} />
+          <Route path="/items/:id" element={<ShowItem />} />
+          <Route path="/items/:id/edit" element={<EditItem />} />
+          <Route path="/transactions/:id" element={<ShowTransaction />} />
+          <Route path="/payment/:id" element={<Payment />} />
+          <Route path="/payment-success/:transactionId" element={<PaymentSuccess />} />
+          <Route path="/transactions/:id/edit" element={<EditTransaction />} />
+          <Route path="/users/:userId/reviews" element={<UserReviews />} />
+        </Routes>
+      </>
+    </CounterContext.Provider>
   );
+
+  function handleLogout() {
+    if (window.confirm('Are you sure you want to log out?')) {
+      logout();
+      navigate('/'); // Redirect to home after logout
+    }
+  }
 }

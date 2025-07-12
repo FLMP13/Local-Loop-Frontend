@@ -192,14 +192,12 @@ export default function Home() {
                     <Card.Text className="mb-1">
                       <strong>Owner:</strong> {item.owner?.nickname || item.owner?.email || 'Unknown'}
                       {item.owner?._id && (
-                        <div>
-                          <Link 
-                            to={`/users/${item.owner._id}/reviews`}
-                            className="text-decoration-none small"
-                          >
+                        <>
+                          {' '}
+                          <Link to={`/users/${item.owner._id}/reviews`} className="text-decoration-none small">
                             View Reviews
                           </Link>
-                        </div>
+                        </>
                       )}
                     </Card.Text>
                     <Card.Text className="mb-2">

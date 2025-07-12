@@ -3,13 +3,18 @@ import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 
-export default function SimpleFilter({ filter, setFilter, statusOptions }) {
+const statusOptions = [
+  'requested', 'accepted', 'paid', 'rejected', 'borrowed',
+  'returned', 'completed', 'renegotiation_requested', 'retracted'
+];
+
+export default function SimpleFilter({ filter, setFilter }) {
   return (
     <Form className="mb-3">
       <Row className="g-2">
         <Col md>
           <Form.Control
-            placeholder="Name"
+            placeholder="Name, Description, or Username"
             value={filter.name}
             onChange={e => setFilter(f => ({ ...f, name: e.target.value }))}
           />
@@ -30,11 +35,20 @@ export default function SimpleFilter({ filter, setFilter, statusOptions }) {
             >
               <option value="">All Statuses</option>
               {statusOptions.map(s => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ')}</option>
               ))}
             </Form.Select>
           </Col>
         )}
+        <Col md>
+          <Form.Select
+            value={filter.sortBy || 'date_desc'}
+            onChange={e => setFilter(f => ({ ...f, sortBy: e.target.value }))}
+          >
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+          </Form.Select>
+        </Col>
       </Row>
     </Form>
   );

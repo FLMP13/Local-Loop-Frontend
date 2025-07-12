@@ -50,9 +50,24 @@ body {
 }
 
 .btn-outline-primary:hover,
-.btn-outline-primary:focus {
+.btn-outline-primary:focus,
+.show > .btn-outline-primary.dropdown-toggle,
+.btn-outline-primary[aria-expanded="true"],
+.dropdown-toggle:hover,
+.dropdown-toggle:focus {
   background-color: var(--brand) !important;
   color: #fff !important;
+  border-color: var(--brand-dark) !important;
+}
+
+/* Fix for dropdown-toggle text color on open/hover/focus */
+.show > .dropdown-toggle,
+.btn-outline-primary.show,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
+.dropdown-toggle:focus {
+  color: #fff !important;
+  background-color: var(--brand) !important;
   border-color: var(--brand-dark) !important;
 }
 
@@ -99,3 +114,13 @@ a:hover {
   display: flex;
   height: 100%;
 }
+
+.card-bg-requested    { background-color: #bcdff1 !important; } /* vivid blue */
+.card-bg-accepted     { background-color: #7be495 !important; } /* vivid green */
+.card-bg-paid         { background-color: #5fd0e6 !important; } /* vivid cyan */
+.card-bg-rejected     { background-color: #ff8a8a !important; } /* vivid red */
+.card-bg-borrowed     { background-color: #7fa6f8 !important; } /* vivid blue */
+.card-bg-returned     { background-color: #ffe066 !important; } /* vivid yellow */
+.card-bg-completed    { background-color: #bdbdbd !important; } /* medium gray */
+.card-bg-renegotiation{ background-color: #ffe066 !important; } /* vivid yellow */
+.card-bg-retracted    { background-color: #bcdff1 !important; color: #6c757d !important; }

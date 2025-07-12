@@ -1,18 +1,38 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { useShowItem } from '../hooks/useShowItem';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { Link } from 'react-router-dom';
 import { Button, Card, Col, Container, Row, Alert } from 'react-bootstrap';
+import axios from 'axios';
 
 export default function ShowItem() {
     const { user } = useContext(AuthContext);
     const { item, loading, error, handleDelete } = useShowItem();
     const [selectedRange, setSelectedRange] = useState();
+    const [unavailableRanges, setUnavailableRanges] = useState([]);
+
+    useEffect(() => {
+        if (!item || !item._id) return; // <-- Add this guard!
+        const fetchUnavailable = async () => {
+            const res = await fetch(`/api/items/${item._id}/unavailable`);
+            if (res.ok) {
+                const data = await res.json();
+                setUnavailableRanges(data.map(r => ({
+                    from: new Date(r.from),
+                    to: new Date(r.to)
+                })));
+            }
+        };
+        fetchUnavailable();
+    }, [item?._id]);
 
     const handleRequestBorrow = async () => {
-        if (!selectedRange?.from || !selectedRange?.to) return;
+        if (!selectedRange?.from || !selectedRange?.to) {
+            alert('Please select a valid date range.');
+            return;
+        }
         try {
             const token = localStorage.getItem('token');
             await axios.post(
@@ -101,7 +121,7 @@ export default function ShowItem() {
                                 mode="range"
                                 selected={selectedRange}
                                 onSelect={setSelectedRange}
-                                disabled={[disabledDays]}
+                                disabled={[disabledDays, ...unavailableRanges]}
                             />
                             {selectedRange?.from && selectedRange?.to && (
                                 <p>
@@ -138,7 +158,7 @@ export default function ShowItem() {
                                     // if item is not owned by the user
                                     user && (
                                         <Button
-                                            variant="secondary"
+                                            variant="success"
                                             onClick={handleRequestBorrow}
                                         >
                                             Request to Borrow
