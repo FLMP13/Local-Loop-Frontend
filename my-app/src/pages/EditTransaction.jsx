@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Container, Card, Button, Alert, Form } from 'react-bootstrap';
+import { Container, Card, Button, Alert, Form, Spinner } from 'react-bootstrap';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
@@ -84,7 +84,14 @@ export default function EditTransaction() {
   };
 
   if (error) return <Alert variant="danger">{error}</Alert>;
-  if (!transaction) return <p>Loading...</p>;
+  if (!transaction) {
+    return (
+      <div className="text-center my-5">
+        <Spinner animation="border" style={{ color: 'var(--brand)' }} />
+        <p className="mt-3 text-muted">Loading transaction...</p>
+      </div>
+    );
+  }
 
   return (
     <Container className="py-5">
@@ -98,7 +105,7 @@ export default function EditTransaction() {
                 mode="range"
                 selected={selectedRange}
                 onSelect={setSelectedRange}
-                disabled={disabledDays}
+                disabled={[{ before: new Date() }, disabledDays]}
               />
             </Form.Group>
             <Form.Group className="mb-3">
