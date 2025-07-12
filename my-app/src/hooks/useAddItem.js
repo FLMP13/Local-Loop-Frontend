@@ -55,7 +55,7 @@ export function useAddItem() {
           Authorization: `Bearer ${token}`
         }
       });
-      navigate('/');
+      navigate('/my-items');
     } catch (err) {
       console.error('Error adding item in hook:', err.response?.data || err);
       setError('Failed to add item. Please try again.');
