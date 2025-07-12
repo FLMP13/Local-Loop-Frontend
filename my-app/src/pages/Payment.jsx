@@ -75,7 +75,7 @@ export default function Payment() {
                 <PayPalButtons
                   style={{ layout: "vertical" }}
                   createOrder={(data, actions) => {
-                    const amount = transactionSummary.itemPrice || "9.99"; // Fallback amount if not available
+                    const amount = transactionSummary.totalAmount || transactionSummary.itemPrice || "9.99"; // Use totalAmount (lending fee + deposit)
                     console.log("Creating order with amount:", amount);
                     return actions.order.create({
                       purchase_units: [
@@ -148,7 +148,21 @@ export default function Payment() {
                       <strong>Item:</strong> {transactionSummary.itemTitle}
                     </Card.Text>
                     <Card.Text>
-                      <strong>Price:</strong> €{transactionSummary.itemPrice}
+                      <strong>Rental Period:</strong><br />
+                      {new Date(transactionSummary.requestedFrom).toLocaleDateString()} - {new Date(transactionSummary.requestedTo).toLocaleDateString()}
+                    </Card.Text>
+                    <hr />
+                    <Card.Text>
+                      <strong>Weekly Rate:</strong> €{transactionSummary.itemPrice}
+                    </Card.Text>
+                    <Card.Text>
+                      <strong>Security Deposit:</strong> €{transactionSummary.deposit}
+                    </Card.Text>
+                    <Card.Text className="fw-bold">
+                      <strong>Total Payment:</strong> €{transactionSummary.totalAmount}
+                    </Card.Text>
+                    <Card.Text className="text-muted small">
+                      * Deposit will be returned after item return
                     </Card.Text>
                     <Card.Text>
                       <strong>Status:</strong> {transactionSummary.status}

@@ -40,7 +40,7 @@ export default function PaymentSuccess() {
         <p>You can now get your pick-up code in your transaction details, which you can give the lender of your item after receiving it.</p>
         <p>
           Lent by: <strong>{transaction.lender}</strong><br />
-          Amount: <strong>€{transaction.itemPrice}</strong>
+          Amount: <strong>€{transaction.totalAmount}</strong>
         </p>
         <Link to={`/transactions/${transactionId}`} className="btn btn-primary mt-3">
           ➜ Go to Transaction

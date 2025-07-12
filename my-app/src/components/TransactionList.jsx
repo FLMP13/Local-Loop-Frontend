@@ -338,8 +338,9 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
 
     // Sort by: 1) Active buttons first, 2) Date (newest first or as specified)
     filtered = filtered.sort((a, b) => {
-      const aHasButtons = hasActiveButtons(a, { id: userId });
-      const bHasButtons = hasActiveButtons(b, { id: userId });
+      // Only check for active buttons if userId is available
+      const aHasButtons = userId ? hasActiveButtons(a, { id: userId }) : false;
+      const bHasButtons = userId ? hasActiveButtons(b, { id: userId }) : false;
       
       // Transactions with active buttons come first
       if (aHasButtons && !bHasButtons) return -1;
@@ -355,12 +356,21 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
     return filtered;
   }
 
-  const filteredTransactions = filterAndSortTransactions(transactions, filter, user.id);
+  const filteredTransactions = filterAndSortTransactions(transactions, filter, user?.id);
 
   if (error) {
     return (
       <Container className="py-5">
         <Alert variant="danger">{error}</Alert>
+      </Container>
+    );
+  }
+
+  // Show loading state if user is not loaded yet
+  if (!user) {
+    return (
+      <Container className="py-5">
+        <p>Loading...</p>
       </Container>
     );
   }

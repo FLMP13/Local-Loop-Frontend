@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
+import 'react-day-picker/style.css';
 import { useShowItem } from '../hooks/useShowItem';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { Link } from 'react-router-dom';
@@ -74,14 +74,17 @@ export default function ShowItem() {
                             <Card.Title>Description</Card.Title>
                             <Card.Text>{item.description}</Card.Text>
 
-                            <Card.Title>Price</Card.Title>
-                            <Card.Text>${item.price}</Card.Text>
+                            <Card.Title>Weekly Rate</Card.Title>
+                            <Card.Text>€{item.price} per week</Card.Text>
+
+                            <Card.Title>Security Deposit</Card.Title>
+                            <Card.Text>€{item.price * 5}</Card.Text>
 
                             <Card.Title>Category</Card.Title>
                             <Card.Text>{item.category}</Card.Text>
 
                             <Card.Title>Owner</Card.Title>
-                            <Card.Text>
+                            <div>
                                 {item.owner?.nickname || item.owner?.email || 'Unknown'}
                                 {item.owner?._id && (
                                     <div className="mt-1">
@@ -96,7 +99,7 @@ export default function ShowItem() {
                                         </Button>
                                     </div>
                                 )}
-                            </Card.Text>
+                            </div>
 
                             <Card.Title>Zip Code</Card.Title>
                             <Card.Text>
