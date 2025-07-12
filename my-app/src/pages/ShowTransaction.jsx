@@ -331,6 +331,7 @@ export default function ShowTransaction() {
 
   const handleForceComplete = async () => {
     setReturnError('');
+    setUpdating(true);
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`/api/transactions/${transaction._id}/return-complete`, {
@@ -338,16 +339,25 @@ export default function ShowTransaction() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        const otherUserId = user.id === transaction.lender._id
-          ? transaction.borrower._id
-          : transaction.lender._id;
-        navigate(`/users/${otherUserId}/reviews?tab=${user.id === transaction.lender._id ? 'borrower' : 'lender'}`);
+        // Refetch transaction data to update the UI
+        const refetchRes = await fetch(`/api/transactions/${transaction._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (refetchRes.ok) {
+          const updatedTransaction = await refetchRes.json();
+          setTransaction(updatedTransaction);
+          fetchCounts();
+          setShowReturnModal(false);
+        } else {
+          setReturnError('Failed to load updated transaction data');
+        }
       } else {
         setReturnError('Failed to complete return');
       }
     } catch (err) {
       setReturnError('Failed to complete return');
     }
+    setUpdating(false);
   };
 
   const handlePickupCodeSubmit = async () => {
