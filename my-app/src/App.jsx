@@ -35,7 +35,7 @@ function NotificationBubble({ count }) {
   if (!count || count < 1) return null;
   return (
     <span style={{
-      background: 'red',
+      background: 'var(--brand)',
       color: 'white',
       borderRadius: '50%',
       width: '1.7em',
@@ -43,15 +43,16 @@ function NotificationBubble({ count }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '0.9em',
+      fontSize: '0.75em',
+      fontWeight: '600',
       position: 'absolute',
       top: '-10px',
-      right: '-18px', // move further right
+      right: '-12px',
       zIndex: 2,
-      fontWeight: 'bold',
-      boxShadow: '0 0 0 2px #fff7dc'
+      border: '2px solid white',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
     }}>
-      {count}
+      {count > 99 ? '99+' : count}
     </span>
   );
 }
@@ -140,28 +141,30 @@ export default function App() {
   return (
     <CounterContext.Provider value={{ fetchCounts }}>
       <>
-        <Navbar expand="lg" style={{ backgroundColor: '#fff7dc' }}>
+        <Navbar expand="lg" className="navbar-light bg-white shadow-sm">
           <Container>
-            <Navbar.Brand as={Link} to="/">
+            <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
               <img
                 src={logo}
-                alt="Logo"
-                height="130"
+                alt="Local Loop"
+                style={{ height: '50px' }}
                 className="d-inline-block align-top"
               />
             </Navbar.Brand>
-            <Button
-              as={Link}
-              to="/"
-              variant="outline-primary"
-              className="ms-2 me-2"
-              style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd', display: 'flex', alignItems: 'center'}}
-            >
-              Browse Items
-              <Search style={{ marginLeft: '0.3em', position: 'relative'}} />
-            </Button>
-            <Nav className="me-auto">
-              <ButtonGroup>
+            
+            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            <Navbar.Collapse id="basic-navbar-nav">
+              <Nav className="me-auto">
+                <Button
+                  as={Link}
+                  to="/"
+                  variant="outline-primary"
+                  className="me-3"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Search size={16} />
+                  Browse Items
+                </Button>
                 {user ? (
                   <NavDropdown
                     title={
@@ -178,19 +181,16 @@ export default function App() {
                       </span>
                     }
                     id="my-items-dropdown"
-                    as={Button}
-                    variant="outline-primary"
-                    className="me-2"
-                    style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd' }}
+                    className="me-3"
                   >
-                    <NavDropdown.Item as={Link} to="/my-items">
+                    <NavDropdown.Item onClick={() => navigate('/my-items')}>
                       My Items
                     </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/my-borrowings" style={{ position: 'relative' }}>
+                    <NavDropdown.Item onClick={() => navigate('/my-borrowings')} style={{ position: 'relative' }}>
                       My Borrowings
                       <NotificationBubble count={borrowingsCount} />
                     </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/my-lendings" style={{ position: 'relative' }}>
+                    <NavDropdown.Item onClick={() => navigate('/my-lendings')} style={{ position: 'relative' }}>
                       My Lendings
                       <NotificationBubble count={lendingsCount} />
                     </NavDropdown.Item>
@@ -200,8 +200,8 @@ export default function App() {
                     as={Link}
                     to="/my-items"
                     variant="outline-primary"
-                    className="me-2"
-                    style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd', height: '100%' }}
+                    className="me-3"
+                    style={{ borderRadius: '8px' }}
                   >
                     My Items
                   </Button>
@@ -210,32 +210,35 @@ export default function App() {
                   as={Link}
                   to="/add-item"
                   variant="outline-primary"
-                  className="ms-2"
-                  style={{ borderRadius: '0.375rem', border: '1px solid #0d6efd', display: 'flex', alignItems: 'center'}}
+                  className="me-3"
+                  style={{ borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}
                 >
-                  Add Item <span aria-hidden="true" style={{ fontSize: '1.2em', marginLeft: '0.2em' }}>+</span>
+                  Add Item <span aria-hidden="true" style={{ fontSize: '1.2em' }}>+</span>
                 </Button>
-              </ButtonGroup>
-            </Nav>
-            <Nav className="ms-auto">
-              <Button
-                as={Link}
-                to={user ? '/profile' : '/login'}
-                variant="dark"
-                className="ms-auto me-2"
-              >
-                {user ? 'My Profile' : 'Log In'}
-              </Button>
-              {user && (
-                <Button
-                  variant="outline-secondary"
-                  className="ms-2"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
-              )}
-            </Nav>
+              </Nav>
+              <Nav className="d-flex align-items-center">
+                <ButtonGroup>
+                  <Button
+                    as={Link}
+                    to={user ? '/profile' : '/login'}
+                    variant="primary"
+                    className="me-2"
+                    style={{ borderRadius: '8px' }}
+                  >
+                    {user ? 'My Profile' : 'Log In'}
+                  </Button>
+                  {user && (
+                    <Button
+                      variant="outline-secondary"
+                      onClick={handleLogout}
+                      style={{ borderRadius: '8px' }}
+                    >
+                      Logout
+                    </Button>
+                  )}
+                </ButtonGroup>
+              </Nav>
+            </Navbar.Collapse>
           </Container>
         </Navbar>
         <Routes>
