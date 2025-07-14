@@ -15,6 +15,10 @@ import axios from 'axios';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import Modal from 'react-bootstrap/Modal';
+import Form from 'react-bootstrap/Form';
+import { 
+  saveForceNotification 
+} from '../utils/simpleNotifications.js';
 
 const STATUS_COLORS = {
   requested: '#2196F3',
@@ -23,7 +27,7 @@ const STATUS_COLORS = {
   rejected: '#F44336',
   borrowed: '#3F51B5',
   returned: '#FFC107',
-  completed: '#9E9E9E',
+  completed: '#4CAF50',
   renegotiation_requested: '#FF9800',
   retracted: '#757575'
 };
@@ -77,6 +81,23 @@ export default function ShowTransaction() {
   const [showPickupModal, setShowPickupModal] = useState(false);
   const [pickupCodeInput, setPickupCodeInput] = useState('');
   const [pickupError, setPickupError] = useState('');
+  const [depositRefundInfo, setDepositRefundInfo] = useState(null);
+  const [showRefundSuccess, setShowRefundSuccess] = useState(false);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [showInspectionMessage, setShowInspectionMessage] = useState(false);
+  const [showDepositMessage, setShowDepositMessage] = useState(false);
+  const [depositMessageInfo, setDepositMessageInfo] = useState(null);
+  const [showBorrowerNotification, setShowBorrowerNotification] = useState(false);
+  const [borrowerNotificationInfo, setBorrowerNotificationInfo] = useState(null);
+  const [showDamageModal, setShowDamageModal] = useState(false);
+  const [damageDescription, setDamageDescription] = useState('');
+
+  // Debug: Log showPaymentSuccess state changes
+  useEffect(() => {
+    console.log('showPaymentSuccess state changed:', showPaymentSuccess);
+  }, [showPaymentSuccess]);
+  const [depositRefundPercentage, setDepositRefundPercentage] = useState(100);
+  const [damageError, setDamageError] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const navigate = useNavigate();
@@ -309,6 +330,29 @@ export default function ShowTransaction() {
       });
       const data = await res.json();
       if (res.ok) {
+        // Store deposit refund information if available
+        if (data.depositDistribution) {
+          setDepositRefundInfo(data.depositDistribution);
+          setShowRefundSuccess(true);
+          // Hide success message after 10 seconds
+          setTimeout(() => setShowRefundSuccess(false), 10000);
+        }
+        
+        // Show inspection message for borrower
+        if (user?.id === transaction.borrower?._id) {
+          setShowInspectionMessage(true);
+          // Hide inspection message after 8 seconds and then show review modal
+          setTimeout(() => {
+            setShowInspectionMessage(false);
+            // Show review modal after inspection message disappears
+            setTimeout(() => {
+              setShowReviewModal(true);
+            }, 500);
+          }, 8000);
+        } else {
+          // Normal case - no notification needed since both parties are present during normal flow
+        }
+        
         // Close the return modal first
         setShowReturnModal(false);
         // Clear the return code input
@@ -327,10 +371,14 @@ export default function ShowTransaction() {
             setCanReview({ canReview: true, role: 'borrower' });
             // Update counters since transaction status changed
             fetchCounts();
-            // Show the review modal after ensuring transaction data is updated
-            setTimeout(() => {
-              setShowReviewModal(true);
-            }, 200);
+            
+            // Review modal timing is now handled in the inspection message logic above
+            // Only show review modal immediately if user is NOT the borrower
+            if (user?.id !== transaction.borrower?._id) {
+              setTimeout(() => {
+                setShowReviewModal(true);
+              }, 500);
+            }
           } else {
             setReturnError('Failed to load updated transaction data');
           }
@@ -356,6 +404,11 @@ export default function ShowTransaction() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
+        // Save notification for borrower
+        if (transaction.borrower?.email) {
+          saveForceNotification(transaction.borrower.email, transaction, 'return');
+        }
+        
         // Refetch transaction data to update the UI
         const refetchRes = await fetch(`/api/transactions/${transaction._id}`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -378,9 +431,12 @@ export default function ShowTransaction() {
   };
 
   const handlePickupCodeSubmit = async () => {
+    console.log('handlePickupCodeSubmit called with code:', pickupCodeInput);
     setPickupError('');
+    setUpdating(true);
     try {
       const token = localStorage.getItem('token');
+      console.log('Making API call to pickup-code endpoint');
       const res = await fetch(`/api/transactions/${transaction._id}/pickup-code`, {
         method: 'POST',
         headers: {
@@ -390,22 +446,133 @@ export default function ShowTransaction() {
         body: JSON.stringify({ code: pickupCodeInput })
       });
       const data = await res.json();
+      console.log('API Response:', { status: res.status, ok: res.ok, data });
+      
       if (res.ok) {
+        console.log('API call successful, updating transaction');
+        // Update transaction with the returned transaction object
         setTransaction(data);
         setShowPickupModal(false);
         setPickupCodeInput('');
+        
+        // Show payment success popup for lender (who enters the code)
+        // The lender receives payment when borrower's pickup code is confirmed
+        console.log('Setting payment success message to true');
+        setShowPaymentSuccess(true);
+        setTimeout(() => {
+          console.log('Hiding payment success message');
+          setShowPaymentSuccess(false);
+        }, 8000);
+        
+        // If this is a different user session (borrower not present), save notification for lender
+        // The payment success is already shown for current lender, but if lender logs in later, they should see it
+        // We could add this, but typically the lender who enters the code sees the immediate notification
+        // Only add if we want to ensure lender always sees this even if they log out/in
+        
+        // Update counters since transaction status changed
+        fetchCounts();
       } else {
+        console.log('API call failed:', data.error);
         setPickupError(data.error || 'Invalid code');
       }
     } catch (err) {
+      console.error('Error in handlePickupCodeSubmit:', err);
       setPickupError('Failed to submit code');
     }
+    setUpdating(false);
   };
 
-  // Image modal functions
-  const openImageModal = (index) => {
-    setCurrentImageIndex(index);
-    setShowImageModal(true);
+  const handleConfirmNoDamage = async () => {
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/transactions/${transaction._id}/confirm-no-damage`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Store deposit refund info and show success
+        setDepositRefundInfo(data.depositDistribution);
+        setDepositMessageInfo(data.depositDistribution);
+        setBorrowerNotificationInfo(data.depositDistribution);
+        
+        // Show confirmation message for lender
+        setShowDepositMessage(true);
+        setTimeout(() => setShowDepositMessage(false), 8000);
+        
+        // Show notification for borrower (will be visible when borrower views the page)
+        setShowBorrowerNotification(true);
+        setTimeout(() => setShowBorrowerNotification(false), 12000);
+        
+        // Refresh transaction
+        const refetchRes = await fetch(`/api/transactions/${transaction._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (refetchRes.ok) {
+          const updatedTransaction = await refetchRes.json();
+          setTransaction(updatedTransaction);
+        }
+      } else {
+        alert(data.error || 'Failed to confirm no damage');
+      }
+    } catch (err) {
+      alert('Failed to confirm no damage');
+    }
+    setUpdating(false);
+  };
+
+  const handleReportDamage = async () => {
+    setDamageError('');
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/transactions/${transaction._id}/report-damage`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          damageDescription,
+          depositRefundPercentage
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Store deposit refund info and show success
+        setDepositRefundInfo(data.depositDistribution);
+        setDepositMessageInfo(data.depositDistribution);
+        setBorrowerNotificationInfo(data.depositDistribution);
+        
+        // Show confirmation message for lender
+        setShowDepositMessage(true);
+        setTimeout(() => setShowDepositMessage(false), 8000);
+        
+        // Show notification for borrower (will be visible when borrower views the page)
+        setShowBorrowerNotification(true);
+        setTimeout(() => setShowBorrowerNotification(false), 12000);
+        
+        // Close modal and reset form
+        setShowDamageModal(false);
+        setDamageDescription('');
+        setDepositRefundPercentage(100);
+        
+        // Refresh transaction
+        const refetchRes = await fetch(`/api/transactions/${transaction._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (refetchRes.ok) {
+          const updatedTransaction = await refetchRes.json();
+          setTransaction(updatedTransaction);
+        }
+      } else {
+        setDamageError(data.error || 'Failed to report damage');
+      }
+    } catch (err) {
+      setDamageError('Failed to report damage');
+    }
+    setUpdating(false);
   };
 
   const closeImageModal = () => {
@@ -464,6 +631,188 @@ export default function ShowTransaction() {
           className="mb-4"
         >
           {error}
+        </Alert>
+      )}
+
+      {/* All User Notification Messages at the Top */}
+      
+      {/* Inspection Message for Borrower */}
+      {showInspectionMessage && user?.id === transaction.borrower?._id && (
+        <Alert variant="info" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowInspectionMessage(false)}>
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>🔍</div>
+          <div className="flex-grow-1">
+            <Alert.Heading className="h6 mb-2">Item Successfully Returned!</Alert.Heading>
+            <div className="small">
+              <strong>The lender will now inspect the item for any damage.</strong>
+              <div className="text-muted mt-1">
+                You will be notified once the inspection is complete and your deposit is processed.
+                <br />
+                The lender can either confirm no damage (full deposit refund) or report any damage found.
+              </div>
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {/* Payment Success Message for Lender */}
+      {showPaymentSuccess && (
+        <>
+          {console.log('Rendering Payment Success Alert')}
+          <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowPaymentSuccess(false)}>
+            <div className="me-3" style={{ fontSize: '1.5rem' }}>💰</div>
+            <div className="flex-grow-1">
+              <Alert.Heading className="h6 mb-2">Payment Received!</Alert.Heading>
+              <div className="small">
+                <strong>The borrower has completed the payment and pickup code was confirmed.</strong>
+                <div className="text-success mt-1">
+                  {(() => {
+                    if (!transaction.totalAmount || !transaction.deposit) return null;
+                    const lendingFee = transaction.totalAmount - transaction.deposit;
+                    const platformFee = lendingFee * 0.05;
+                    const lenderPayment = lendingFee * 0.95;
+                    
+                    return (
+                      <>
+                        <strong>Payment breakdown:</strong>
+                        <br />
+                        • Lending fee: €{lendingFee.toFixed(2)}
+                        <br />
+                        • Your share (95%): €{lenderPayment.toFixed(2)} transferred to PayPal
+                        <br />
+                        • Platform fee (5%): €{platformFee.toFixed(2)}
+                        <br />
+                        <em className="text-muted">Deposit (€{transaction.deposit.toFixed(2)}) held until return & inspection.</em>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </Alert>
+        </>
+      )}
+
+      {/* Deposit Processing Message for Lender */}
+      {showDepositMessage && depositMessageInfo && user?.id === transaction.lender?._id && (
+        <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowDepositMessage(false)}>
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>
+            {depositMessageInfo.noDamage ? '✅' : '⚠️'}
+          </div>
+          <div className="flex-grow-1">
+            <Alert.Heading className="h6 mb-2">
+              {depositMessageInfo.noDamage ? 'Deposit Released Successfully!' : 'Damage Report Processed!'}
+            </Alert.Heading>
+            <div className="small">
+              {depositMessageInfo.noDamage ? (
+                <>
+                  <strong>You confirmed no damage to the item.</strong>
+                  <div className="text-success mt-1">
+                    Full deposit (€{depositMessageInfo.toBorrower?.toFixed(2)}) has been refunded to the borrower's PayPal account.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <strong>Damage report submitted and deposit distributed.</strong>
+                  <div className="text-muted mt-1">
+                    Compensation to you: €{depositMessageInfo.toLender?.toFixed(2)}
+                    <br />
+                    Refund to borrower: €{depositMessageInfo.toBorrower?.toFixed(2)}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {/* Borrower Notification after Deposit Processing */}
+      {showBorrowerNotification && borrowerNotificationInfo && user?.id === transaction.borrower?._id && (
+        <Alert variant="info" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowBorrowerNotification(false)}>
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>
+            {borrowerNotificationInfo.depositRefundPercentage === 100 ? '✅' : '⚠️'}
+          </div>
+          <div className="flex-grow-1">
+            <Alert.Heading className="h6 mb-2">
+              {borrowerNotificationInfo.depositRefundPercentage === 100 
+                ? 'Inspection Complete - No Damage Found!' 
+                : 'Inspection Complete - Damage Reported'}
+            </Alert.Heading>
+            <div className="small">
+              {borrowerNotificationInfo.depositRefundPercentage === 100 ? (
+                <>
+                  <strong>Great news! The lender confirmed no damage to the item.</strong>
+                  <div className="text-success mt-1">
+                    Full deposit refund: €{borrowerNotificationInfo.toBorrower?.toFixed(2)} has been transferred to your PayPal account.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <strong>The lender has reported damage to the item.</strong>
+                  <div className="text-muted mt-1">
+                    Deposit refund: €{borrowerNotificationInfo.toBorrower?.toFixed(2)}
+                    <br />
+                    Damage deduction: €{borrowerNotificationInfo.toLender?.toFixed(2)} 
+                    ({(100 - borrowerNotificationInfo.depositRefundPercentage)}% of deposit)
+                  </div>
+                  {transaction.damageDescription && (
+                    <div className="text-warning mt-2">
+                      <strong>Damage details:</strong> {transaction.damageDescription}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      {/* Persistent Inspection Result Message for Borrower (when transaction is completed) */}
+      {(() => {
+        const shouldShow = transaction?.status === 'completed' && 
+                          user?.id === transaction.borrower?._id && 
+                          transaction.depositReturned && 
+                          transaction.depositRefundPercentage !== undefined;
+        
+        return shouldShow;
+      })() && (
+        <Alert variant={transaction.depositRefundPercentage === 100 ? "success" : "warning"} className="d-flex align-items-center mb-4">
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>
+            {transaction.depositRefundPercentage === 100 ? '✅' : '⚠️'}
+          </div>
+          <div className="flex-grow-1">
+            <Alert.Heading className="h6 mb-2">
+              {transaction.depositRefundPercentage === 100 
+                ? 'Transaction Completed - No Damage Found!' 
+                : 'Transaction Completed - Damage Was Reported'}
+            </Alert.Heading>
+            <div className="small">
+              {transaction.depositRefundPercentage === 100 ? (
+                <>
+                  <strong>The lender confirmed no damage to the item after inspection.</strong>
+                  <div className="text-success mt-1">
+                    Your full deposit was refunded to your PayPal account.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <strong>The lender reported damage to the item after inspection.</strong>
+                  <div className="text-muted mt-1">
+                    You received {transaction.depositRefundPercentage}% of your deposit as refund.
+                    <br />
+                    {(100 - transaction.depositRefundPercentage)}% was retained as damage compensation.
+                  </div>
+                  {transaction.damageDescription && (
+                    <div className="text-warning mt-2">
+                      <strong>Damage details:</strong> {transaction.damageDescription}
+                    </div>
+                  )}
+                </>
+              )}
+              <div className="text-muted mt-2 small">
+                <em>This transaction has been completed. Thank you for using our platform!</em>
+              </div>
+            </div>
+          </div>
         </Alert>
       )}
       
@@ -573,7 +922,7 @@ export default function ShowTransaction() {
                     >
                       💳 Pay Now
                     </Button>
-                  );
+                );
                 }
                 // Lender: Enter pickup code after payment
                 if (
@@ -617,6 +966,34 @@ export default function ShowTransaction() {
                     </>
                   );
                 }
+                
+                // Lender: Report Damage or Confirm No Damage after item return
+                if (
+                  user?.id === transaction.lender?._id &&
+                  transaction.status === 'returned' &&
+                  !transaction.depositReturned
+                ) {
+                  return (
+                    <>
+                      <Button
+                        variant="warning"
+                        onClick={() => setShowDamageModal(true)}
+                        disabled={updating || transaction.damageReported}
+                        className="rounded-pill"
+                      >
+                        {transaction.damageReported ? '✓ Damage Reported' : '⚠️ Report Damage'}
+                      </Button>
+                      <Button
+                        variant="success"
+                        onClick={handleConfirmNoDamage}
+                        disabled={updating || transaction.damageReported}
+                        className="rounded-pill"
+                      >
+                        ✅ No Damage - Release Deposit
+                      </Button>
+                    </>
+                  );
+                }
                 // Borrower: Enter the code after returning the item
                 if (
                   user?.id === transaction.borrower?._id &&
@@ -653,6 +1030,11 @@ export default function ShowTransaction() {
                           const data = await res.json();
                           if (res.ok) {
                             setTransaction(data);
+                            
+                            // Save notification for lender
+                            if (transaction.lender?.email) {
+                              saveForceNotification(transaction.lender.email, transaction, 'pickup');
+                            }
                           } else {
                             setError(data.error || 'Failed to force pick up');
                             setShowError(true);
@@ -688,7 +1070,31 @@ export default function ShowTransaction() {
           </Col>
         </Row>
       </div>
-      
+
+      {/* Deposit Refund Success Alert */}
+      {showRefundSuccess && depositRefundInfo && user?.id === transaction.borrower?._id && (
+        <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowRefundSuccess(false)}>
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>💰</div>
+          <div className="flex-grow-1">
+            <Alert.Heading className="h6 mb-2">Deposit Refund Processed Successfully!</Alert.Heading>
+            <div className="small">
+              <strong>Refunded to your PayPal account: €{depositRefundInfo.toBorrower?.toFixed(2)}</strong>
+              {depositRefundInfo.depositRefundPercentage < 100 && (
+                <div className="text-muted mt-1">
+                  Damage deduction: €{depositRefundInfo.toLender?.toFixed(2)} 
+                  ({(100 - depositRefundInfo.depositRefundPercentage)}% of deposit)
+                </div>
+              )}
+              {(transaction.damageReported && transaction.damageDescription) && (
+                <div className="text-warning mt-2 small">
+                  <strong>Damage reported:</strong> {transaction.damageDescription}
+                </div>
+              )}
+            </div>
+          </div>
+        </Alert>
+      )}
+
       {/* Renegotiation Form - shown below hero when active */}
       {showRenegotiateForm === transaction._id && (
         <Card className="card-zoomed">
@@ -847,6 +1253,49 @@ export default function ShowTransaction() {
                       <p className="mb-0">
                         <StatusBadge status={status} />
                       </p>
+                      
+                      {/* Deposit Refund Information */}
+                      {depositRefundInfo && user?.id === transaction.borrower?._id && (
+                        <div className="mt-3 p-3 bg-success bg-opacity-10 border border-success rounded">
+                          <h6 className="text-success mb-2">
+                            💰 Deposit Refund Processed
+                          </h6>
+                          <div className="small">
+                            <div className="d-flex justify-content-between mb-1">
+                              <span>Refund Amount:</span>
+                              <span className="fw-bold text-success">€{depositRefundInfo.toBorrower?.toFixed(2)}</span>
+                            </div>
+                            <div className="d-flex justify-content-between mb-1">
+                              <span>Damage Deduction:</span>
+                              <span className="text-muted">€{depositRefundInfo.toLender?.toFixed(2)}</span>
+                            </div>
+                            <div className="d-flex justify-content-between mb-2">
+                              <span>Refund Percentage:</span>
+                              <span className="fw-bold">{depositRefundInfo.depositRefundPercentage}%</span>
+                            </div>
+                            
+                            {/* Damage Report Details */}
+                            {(transaction.damageReported && transaction.damageDescription) && (
+                              <div className="border-top pt-2 mt-2">
+                                <div className="mb-1">
+                                  <strong className="text-warning">Damage Report:</strong>
+                                </div>
+                                <div className="text-muted small" style={{ fontSize: '0.875rem' }}>
+                                  {transaction.damageDescription}
+                                </div>
+                                {depositRefundInfo.depositRefundPercentage < 100 && (
+                                  <div className="text-warning small mt-1">
+                                    ⚠️ {100 - depositRefundInfo.depositRefundPercentage}% of deposit deducted for damage compensation
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <small className="text-muted d-block mt-2">
+                            Refund has been processed to your PayPal account.
+                          </small>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Col>
@@ -1108,37 +1557,8 @@ export default function ShowTransaction() {
           />
           <Button
             variant="success"
-            onClick={async () => {
-              setPickupError('');
-              setUpdating(true);
-              try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(`/api/transactions/${transaction._id}/pickup-code`, {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ code: pickupCodeInput })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                  setShowPickupModal(false);
-                  setPickupCodeInput('');
-                  // Refetch transaction data
-                  const res2 = await fetch(`/api/transactions/${transaction._id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                  });
-                  const updated = await res2.json();
-                  setTransaction(updated);
-                } else {
-                  setPickupError(data.error || 'Incorrect code');
-                }
-              } catch (err) {
-                setPickupError('Failed to submit code');
-              }
-              setUpdating(false);
-            }}
+            onClick={handlePickupCodeSubmit}
+            disabled={updating}
           >
             Submit Code
           </Button>
@@ -1194,6 +1614,91 @@ export default function ShowTransaction() {
         </div>
       )}
 
+      {/* Damage Report Modal */}
+      <Modal show={showDamageModal} onHide={() => setShowDamageModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Report Item Damage</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {damageError && <Alert variant="danger">{damageError}</Alert>}
+          
+          <Form onSubmit={(e) => { e.preventDefault(); handleReportDamage(); }}>
+            <Form.Group className="mb-3">
+              <Form.Label>Damage Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={damageDescription}
+                onChange={(e) => setDamageDescription(e.target.value)}
+                placeholder="Describe the damage to the item..."
+                required
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Borrower Refund Percentage</Form.Label>
+              <Form.Range
+                min={0}
+                max={100}
+                step={5}
+                value={depositRefundPercentage}
+                onChange={(e) => setDepositRefundPercentage(e.target.value)}
+                className="mb-2"
+              />
+              <div className="d-flex justify-content-between align-items-center">
+                <small className="text-muted">
+                  Borrower gets: <strong>{depositRefundPercentage}%</strong> (€{(transaction.deposit * depositRefundPercentage / 100).toFixed(2)})
+                </small>
+                <small className="text-muted">
+                  You get: <strong>{100 - depositRefundPercentage}%</strong> (€{(transaction.deposit * (100 - depositRefundPercentage) / 100).toFixed(2)})
+                </small>
+              </div>
+              <Form.Text className="text-muted">
+                Slide to adjust how much of the deposit the borrower should receive back (0% = keep entire deposit, 100% = return full deposit)
+              </Form.Text>
+            </Form.Group>
+            
+            <div className="d-flex gap-2 justify-content-end">
+              <Button variant="secondary" onClick={() => setShowDamageModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                variant="warning"
+                disabled={!damageDescription.trim()}
+              >
+                Report Damage
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Deposit Processing Success Alert for Lender */}
+      {showDepositMessage && depositMessageInfo && user?.id === transaction.lender?._id && (
+        <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowDepositMessage(false)}>
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>✅</div>
+          <div className="flex-grow-1">
+            <Alert.Heading className="h6 mb-2">Deposit Processing Complete!</Alert.Heading>
+            <div className="small">
+              <strong>Your decision has been successfully sent to the borrower.</strong>
+              <div className="text-muted mt-1">
+                Borrower refund: €{depositMessageInfo.toBorrower?.toFixed(2)}
+                {depositMessageInfo.toLender > 0 && (
+                  <span> • Damage compensation to you: €{depositMessageInfo.toLender?.toFixed(2)}</span>
+                )}
+                <br />
+                The borrower has been notified about the deposit outcome.
+              </div>
+            </div>
+          </div>
+        </Alert>
+      )}
+      
+      {/* Modern Hero Section */}
+      <div className="modern-transaction-hero mb-3">
+        {/* Rest of component continues... */}
+      </div>
     </Container>
   );
 }

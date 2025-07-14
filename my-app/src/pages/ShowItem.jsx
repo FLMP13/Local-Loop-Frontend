@@ -276,11 +276,26 @@ export default function ShowItem() {
                                                     <span className="me-2">✅</span>
                                                     Booking Summary
                                                 </h6>
-                                                <p className="mb-1 small">
+                                                <p className="mb-2 small">
                                                     <strong>Dates:</strong> {selectedRange.from.toLocaleDateString()} – {selectedRange.to.toLocaleDateString()}
                                                 </p>
-                                                <p className="mb-0 text-success fw-bold">
-                                                    <strong>Total: €{computeWeeklyCharge(selectedRange, item.price)}</strong>
+                                                <div className="small mb-2">
+                                                    <div className="d-flex justify-content-between mb-1">
+                                                        <span>Rental cost:</span>
+                                                        <span>€{computeWeeklyCharge(selectedRange, item.price)}</span>
+                                                    </div>
+                                                    <div className="d-flex justify-content-between mb-1">
+                                                        <span>Security deposit:</span>
+                                                        <span>€{item.price * 5}</span>
+                                                    </div>
+                                                    <hr className="my-2" />
+                                                    <div className="d-flex justify-content-between fw-bold text-success">
+                                                        <span>Total payment:</span>
+                                                        <span>€{computeWeeklyCharge(selectedRange, item.price) + item.price * 5}</span>
+                                                    </div>
+                                                </div>
+                                                <p className="mb-0 small text-muted">
+                                                    <em>Note: Security deposit will be returned after item return</em>
                                                 </p>
                                             </div>
                                         )}

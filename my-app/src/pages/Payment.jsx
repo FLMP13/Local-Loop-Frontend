@@ -6,6 +6,14 @@ import axios from "axios";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 //import { set } from "mongoose";
 
+// Helper function to calculate total rental cost based on duration and weekly rate
+function computeWeeklyCharge(from, to, weeklyRate) {
+  if (!from || !to || !weeklyRate) return 0;
+  const days = Math.ceil((new Date(to) - new Date(from)) / (1000 * 60 * 60 * 24)) + 1;
+  const weeks = Math.ceil(days / 7);
+  return weeks * weeklyRate;
+}
+
 export default function Payment() {
   const { id } = useParams(); //get the transaction ID from the URL
   const [clientId, setClientId] = useState(null);
@@ -91,12 +99,17 @@ export default function Payment() {
                   createOrder={(data, actions) => {
                     const amount = transactionSummary.totalAmount || transactionSummary.itemPrice || "9.99"; // Use totalAmount (lending fee + deposit)
                     console.log("Creating order with amount:", amount);
+                    console.log("Payment goes to Localloop (Marketplace Platform)");
                     return actions.order.create({
                       purchase_units: [
                         {
                           amount: {
                             value: amount.toString(), // Ensure amount is a string
                           },
+                          payee: {
+                            email_address: "localloop@business.example.com" // All payments go to Localloop first
+                          },
+                          description: `Rental payment for ${transactionSummary.itemTitle} - Localloop will distribute to lender`
                         },
                       ],
                     });
@@ -110,7 +123,7 @@ export default function Payment() {
                       // PATCH: complete-payment
                       const paymentRes = await axios.patch(
                         `/api/transactions/${id}/complete-payment`,
-                        {},
+                        {}, // No PayPal payment ID needed for sandbox
                         { headers: { Authorization: `Bearer ${token}` } }
                       );
                       if (paymentRes.status !== 200) throw new Error('Payment update failed');
@@ -167,13 +180,16 @@ export default function Payment() {
                     </Card.Text>
                     <hr />
                     <Card.Text>
-                      <strong>Weekly Rate:</strong> €{transactionSummary.itemPrice}
+                      <strong>Rental Cost:</strong> €{computeWeeklyCharge(transactionSummary.requestedFrom, transactionSummary.requestedTo, transactionSummary.itemPrice)}
                     </Card.Text>
                     <Card.Text>
                       <strong>Security Deposit:</strong> €{transactionSummary.deposit}
                     </Card.Text>
                     <Card.Text className="fw-bold">
                       <strong>Total Payment:</strong> €{transactionSummary.totalAmount}
+                    </Card.Text>
+                    <Card.Text className="text-muted small">
+                      Weekly Rate: €{transactionSummary.itemPrice}/week
                     </Card.Text>
                     <Card.Text className="text-muted small">
                       * Deposit will be returned after item return
