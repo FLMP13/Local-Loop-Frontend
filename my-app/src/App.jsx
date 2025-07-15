@@ -10,6 +10,7 @@ import Nav from 'react-bootstrap/Nav';
 import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import NavDropdown from 'react-bootstrap/NavDropdown';
+import Alert from 'react-bootstrap/Alert';
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import CreateProfile from './pages/CreateProfile.jsx'
@@ -28,8 +29,14 @@ import { AuthContext } from './context/AuthContext.jsx'
 import ShowTransaction from './pages/ShowTransaction';
 import EditTransaction from './pages/EditTransaction.jsx';
 import { Search } from 'react-bootstrap-icons';
+import { Prev } from 'react-bootstrap/esm/PageItem.js';
+import { 
+  getForceNotification, 
+  createMessage 
+} from './utils/simpleNotifications.js';
 
 export const CounterContext = createContext();
+export const NotificationContext = createContext();
 
 function NotificationBubble({ count }) {
   if (!count || count < 1) return null;
@@ -61,12 +68,18 @@ export default function App() {
   const { user, logout } = useContext(AuthContext);
   const [borrowingsCount, setBorrowingsCount] = useState(0);
   const [lendingsCount, setLendingsCount] = useState(0);
+  const [hiddenNotifications, setHiddenNotifications] = useState(new Set());
+  const [tempNotification, setTempNotification] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
   // Helper function to check if a transaction has active buttons for the user
   const hasActiveButtons = (transaction, user) => {
     if (!user || !transaction) return false;
+    
+    // Get hidden notifications from localStorage
+    const savedHidden = localStorage.getItem('hiddenNotifications');
+    const hiddenNotifications = savedHidden ? new Set(JSON.parse(savedHidden)) : new Set();
     
     // Lender: Accept/Decline/Renegotiate if requested
     if (user.id === transaction.lender?._id && transaction.status === 'requested') {
@@ -108,6 +121,21 @@ export default function App() {
       return true;
     }
     
+    // Lender: Inspect and report damage after return
+    if (user.id === transaction.lender?._id && transaction.status === 'returned') {
+      return true;
+    }
+    
+    // Borrower: New notification available when transaction completed (deposit processed)
+    // Only if not hidden
+    if (user.id === transaction.borrower?._id && transaction.status === 'completed' && 
+        transaction.depositReturned && transaction.depositRefundPercentage !== undefined &&
+        !hiddenNotifications.has(transaction._id)) {
+      return true;
+    }
+
+  
+    
     return false;
   };
 
@@ -131,9 +159,23 @@ export default function App() {
     setLendingsCount(lendings.filter(t => hasActiveButtons(t, user)).length);
   };
 
+  // Check for force notifications when user logs in
+  const checkForceActionNotifications = () => {
+    if (!user?.email) return;
+    
+    const notif = getForceNotification(user.email);
+    if (notif) {
+      const msg = createMessage(notif.type, notif.data);
+      setTempNotification({ ...msg, transactionId: notif.id });
+      setTimeout(() => setTempNotification(null), 8000);
+    }
+  };
+
   // Fetch counters on user change and on every route change
   useEffect(() => {
     fetchCounts();
+    // Check for force action notifications when user logs in
+    checkForceActionNotifications();
     // eslint-disable-next-line
   }, [user, location.pathname]);
 
@@ -241,6 +283,38 @@ export default function App() {
             </Navbar.Collapse>
           </Container>
         </Navbar>
+        
+        {/* Temporary Force Action Notifications */}
+        {tempNotification && (
+          <Container className="mt-3">
+            <Alert 
+              variant={tempNotification.variant}
+              dismissible
+              onClose={() => setTempNotification(null)}
+              className="d-flex align-items-center mb-4"
+            >
+              <div className="me-3" style={{ fontSize: '1.5rem' }}>
+                {tempNotification.variant === 'success' ? '💰' : '�'}
+              </div>
+              <div className="flex-grow-1">
+                <Alert.Heading className="h6 mb-2">{tempNotification.title}</Alert.Heading>
+                <div className="small">{tempNotification.text}</div>
+              </div>
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => {
+                  setTempNotification(null);
+                  navigate(`/transactions/${tempNotification.transactionId}`);
+                }}
+                className="ms-3"
+              >
+                View Transaction
+              </Button>
+            </Alert>
+          </Container>
+        )}
+        
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/add-item" element={<AddItem />} />

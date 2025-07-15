@@ -35,15 +35,24 @@ export default function PaymentSuccess() {
   return (
     <Container className="mt-5 d-flex justify-content-center">
       <Card style={{ maxWidth: "500px", padding: "2rem", textAlign: "center" }}>
-        <h2 className="text-success mb-3">Thank you for your payment!</h2>
-        <p>The payment for <strong>{transaction.itemTitle}</strong> was completed successfully.</p>
-        <p>You can now get your pick-up code in your transaction details, which you can give the lender of your item after receiving it.</p>
+        <h2 className="text-success mb-3">✅ Payment Successful!</h2>
+        <p>Your payment for <strong>{transaction.itemTitle}</strong> has been completed successfully.</p>
+        
+        <div className="alert alert-info my-3">
+          <strong>What happens next?</strong>
+          <ul className="list-unstyled mt-2 mb-0">
+            <li>🔐 A pickup code has been generated for you</li>
+            <li>💰 The lender will receive their payment when you pick up the item</li>
+            <li>📱 Give the pickup code to the lender when collecting the item</li>
+          </ul>
+        </div>
+
         <p>
-          Lent by: <strong>{transaction.lender}</strong><br />
-          Amount: <strong>€{transaction.itemPrice}</strong>
+          <strong>Lender:</strong> {transaction.lender}<br />
+          <strong>Total Amount:</strong> €{transaction.totalAmount}
         </p>
         <Link to={`/transactions/${transactionId}`} className="btn btn-primary mt-3">
-          ➜ Go to Transaction
+          ➜ View Pickup Code & Details
         </Link>
       </Card>
     </Container>
