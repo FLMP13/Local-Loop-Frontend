@@ -43,6 +43,7 @@ export default function AddItem() {
         handlePriceChange,
         handleCategoryChange,
         handleImageChange,
+        handleImageRemove,
         handleAvailabilityChange,
         handleSubmit,
         handleUpgrade,
@@ -226,28 +227,45 @@ export default function AddItem() {
                                                         <span className="text-muted small">Maximum reached</span>
                                                     )}
                                                 </div>
-                                                <Row className="g-3">
+                                                <div className="d-flex flex-wrap gap-2">
                                                     {imagePreviews.map((src, idx) => (
-                                                        <Col xs={4} key={idx}>
-                                                            <div className="position-relative">
-                                                                <Image 
-                                                                    src={src} 
-                                                                    className="w-100 rounded-3 border"
-                                                                    style={{ 
-                                                                        height: '120px', 
-                                                                        objectFit: 'cover' 
-                                                                    }} 
-                                                                    alt={`Preview ${idx + 1}`} 
-                                                                />
-                                                                <div className="position-absolute top-0 end-0 m-2">
-                                                                    <span className="badge bg-dark bg-opacity-75 rounded-circle" style={{ width: '24px', height: '24px', fontSize: '0.75rem' }}>
-                                                                        {idx + 1}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </Col>
+                                                        <div className="position-relative d-inline-block" key={idx}>
+                                                            <Image 
+                                                                src={src} 
+                                                                className="rounded-3 border"
+                                                                style={{ 
+                                                                    maxWidth: '100%',
+                                                                    maxHeight: '250px',
+                                                                    height: 'auto',
+                                                                    width: 'auto',
+                                                                    display: 'block'
+                                                                }} 
+                                                                alt={`Preview ${idx + 1}`} 
+                                                            />
+                                                            <Button
+                                                                variant="outline-secondary"
+                                                                size="sm"
+                                                                className="position-absolute top-0 end-0 m-2 rounded-circle p-1"
+                                                                style={{ 
+                                                                    width: '28px', 
+                                                                    height: '28px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    fontSize: '14px',
+                                                                    lineHeight: '1',
+                                                                    backgroundColor: 'rgba(108, 117, 125, 0.5)',
+                                                                    borderColor: 'rgba(108, 117, 125, 0.5)',
+                                                                    color: 'white'
+                                                                }}
+                                                                onClick={() => handleImageRemove(idx)}
+                                                                title="Remove image"
+                                                            >
+                                                                ×
+                                                            </Button>
+                                                        </div>
                                                     ))}
-                                                </Row>
+                                                </div>
                                             </div>
                                         )}
                                     </Form.Group>

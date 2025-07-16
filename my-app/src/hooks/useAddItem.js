@@ -28,6 +28,17 @@ export function useAddItem() {
     setImagePreviews(files.map(file => URL.createObjectURL(file)));
   };
 
+  const handleImageRemove = (indexToRemove) => {
+    // Revoke the object URL to prevent memory leaks
+    URL.revokeObjectURL(imagePreviews[indexToRemove]);
+    
+    const newImages = images.filter((_, index) => index !== indexToRemove);
+    const newPreviews = imagePreviews.filter((_, index) => index !== indexToRemove);
+    
+    setImages(newImages);
+    setImagePreviews(newPreviews);
+  };
+
   const handleAvailabilityChange = range => {
     setAvailability(range);
   };
@@ -118,6 +129,7 @@ export function useAddItem() {
     handlePriceChange,
     handleCategoryChange,
     handleImageChange,
+    handleImageRemove,
     handleAvailabilityChange,
     handleSubmit,
     handleUpgrade,
