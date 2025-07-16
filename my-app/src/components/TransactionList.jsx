@@ -38,8 +38,8 @@ function StatusBadge({ status }) {
   );
 }
 
-// Helper function to check if a transaction has active buttons for the user
-function hasActiveButtons(transaction, user) {
+// Helper function to check if a transaction has active buttons for the user  
+function hasActiveButtons(transaction, user, hiddenNotifications = new Set()) {
   if (!user || !transaction) return false;
   
   // Lender: Accept/Decline/Renegotiate if requested
@@ -62,23 +62,30 @@ function hasActiveButtons(transaction, user) {
     return true;
   }
   
-  // Lender: Enter pickup code after payment
-  if (user.id === transaction.lender?._id && transaction.status === 'paid') {
+  // Borrower: Generate return code button after payment
+  if (user.id === transaction.borrower?._id && transaction.status === 'paid' && !transaction.returnCodeGenerated) {
     return true;
   }
   
-  // Lender: Generate/View Return Code and Force Return if borrowed
-  if (user.id === transaction.lender?._id && transaction.status === 'borrowed') {
+  // Lender: Generate pickup code button
+  if (user.id === transaction.lender?._id && transaction.status === 'paid' && !transaction.pickupCodeUsed) {
     return true;
   }
   
-  // Borrower: Enter the code after returning the item
-  if (user.id === transaction.borrower?._id && transaction.status === 'borrowed') {
+  // Lender: Enter pickup code button for borrowed items
+  if (user.id === transaction.lender?._id && transaction.status === 'borrowed' && !transaction.pickupCodeUsed) {
     return true;
   }
   
-  // Borrower: Force Pick Up if paid
-  if (user.id === transaction.borrower?._id && transaction.status === 'paid') {
+  // Lender: Inspect and report damage after return
+  if (user.id === transaction.lender?._id && transaction.status === 'returned') {
+    return true;
+  }
+  
+  // Borrower: New notification available when transaction completed (deposit processed)
+  if (user.id === transaction.borrower?._id && transaction.status === 'completed' && 
+      transaction.depositReturned && transaction.depositRefundPercentage !== undefined &&
+      !hiddenNotifications.has(transaction._id)) {
     return true;
   }
   
@@ -86,7 +93,7 @@ function hasActiveButtons(transaction, user) {
 }
 
 // Action buttons component matching ShowTransaction.jsx
-function ActionButtons({ transaction, user, onAction }) {
+function ActionButtons({ transaction, user, onAction, hiddenNotifications = new Set(), onHideNotification }) {
   const navigate = useNavigate();
   const [updating, setUpdating] = useState(false);
 
@@ -305,14 +312,96 @@ function ActionButtons({ transaction, user, onAction }) {
     );
   }
 
+  // Lender: Inspect and report damage after return
+  if (user?.id === transaction.lender?._id && transaction.status === 'returned') {
+    return (
+      <div className="d-flex gap-2 flex-wrap">
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showDamageReport=1`); }}
+          className="flex-fill rounded-pill"
+        >
+          ⚠️ Report Damage
+        </Button>
+        <Button
+          variant="success"
+          size="sm"
+          onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showNoDamage=1`); }}
+          className="flex-fill rounded-pill"
+        >
+          ✅ No Damage
+        </Button>
+      </div>
+    );
+  }
+
+  // Borrower: New Update button for completed transactions with deposit info
+  if (user?.id === transaction.borrower?._id && 
+      transaction.status === 'completed' && 
+      transaction.depositReturned && 
+      transaction.depositRefundPercentage !== undefined &&
+      !hiddenNotifications.has(transaction._id)) {
+    return (
+      <Button
+        variant="info"
+        className="w-100 d-flex align-items-center justify-content-center gap-2 animated-pulse"
+        style={{ 
+          fontSize: '1rem',
+          padding: '0.8em 1.5em',
+          borderRadius: '25px',
+          fontWeight: '600',
+          animation: 'pulse 2s infinite',
+          border: 'none'
+        }}
+        onClick={() => {
+          // Hide notification first
+          onHideNotification && onHideNotification(transaction._id);
+          // Then navigate to transaction
+          navigate(`/transactions/${transaction._id}`);
+        }}
+        title="View transaction details"
+      >
+        🔔 New Update
+      </Button>
+    );
+  }
+
   return null;
+}
+
+// Helper function to check if there are new notifications for the borrower
+function hasNewNotification(transaction, user, hiddenNotifications) {
+  if (!user || !transaction) return false;
+  
+  // Skip if notification is hidden locally
+  if (hiddenNotifications.has(transaction._id)) return false;
+  
+  // Borrower: New inspection result notification when transaction is completed
+  if (user.id === transaction.borrower?._id && 
+      transaction.status === 'completed' && 
+      transaction.depositReturned && 
+      transaction.depositRefundPercentage !== undefined) {
+    return true;
+  }
+  
+  return false;
 }
 
 export default function TransactionList({ endpoint, title, statusOptions, onTransactionChange }) {
   const { user } = useContext(AuthContext);
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState({
+    name: '',
+    maxPrice: '',
+    status: '',
+    sortBy: 'date_desc'
+  });
+  const [hiddenNotifications, setHiddenNotifications] = useState(() => {
+    const saved = localStorage.getItem('hiddenNotifications');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const navigate = useNavigate();
 
   const fetchTransactions = async () => {
@@ -338,6 +427,13 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
     fetchTransactions();
   }, [endpoint]);
 
+  // Simple handler to hide notification locally and persist to localStorage
+  const handleHideNotification = (transactionId) => {
+    const newHidden = new Set([...hiddenNotifications, transactionId]);
+    setHiddenNotifications(newHidden);
+    localStorage.setItem('hiddenNotifications', JSON.stringify([...newHidden]));
+  };
+
   function filterAndSortTransactions(transactions, filter, userId) {
     let filtered = transactions.filter(t => {
       if (filter.status && t.status !== filter.status) return false;
@@ -357,31 +453,51 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
       return true;
     });
 
-    // Sort by: 1) Active buttons first, 2) Date (newest first or as specified)
+    // Sort by: 1) Active buttons first (except for "requested" status), 2) Date (newest first or as specified)
     filtered = filtered.sort((a, b) => {
-      const aHasButtons = hasActiveButtons(a, { id: userId });
-      const bHasButtons = hasActiveButtons(b, { id: userId });
+      // For "requested" status, keep backend sorting order (already sorted by premium status and date)
+      if (a.status === 'requested' && b.status === 'requested') {
+        // Keep original array order
+        return 0;
+      }
+      
+      // For other statuses, keep the active buttons sorting
+      const aHasButtons = userId ? hasActiveButtons(a, { id: userId }, hiddenNotifications) : false;
+      const bHasButtons = userId ? hasActiveButtons(b, { id: userId }, hiddenNotifications) : false;
+      
+      // For completed transactions, check if notification is hidden
+      const aIsActive = aHasButtons && !(a.status === 'completed' && hiddenNotifications.has(a._id));
+      const bIsActive = bHasButtons && !(b.status === 'completed' && hiddenNotifications.has(b._id));
       
       // Transactions with active buttons come first
-      if (aHasButtons && !bHasButtons) return -1;
-      if (!aHasButtons && bHasButtons) return 1;
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
       
       // If both have or don't have buttons, sort by date
       if (filter.sortBy === 'date_asc') {
-        return new Date(a.requestDate) - new Date(b.requestDate);
+        return new Date(a.requestDate || a.requestedFrom) - new Date(b.requestDate || b.requestedFrom);
       }
-      return new Date(b.requestDate) - new Date(a.requestDate);
+      return new Date(b.requestDate || b.requestedFrom) - new Date(a.requestDate || a.requestedFrom);
     });
 
     return filtered;
   }
 
-  const filteredTransactions = filterAndSortTransactions(transactions, filter, user.id);
+  const filteredTransactions = filterAndSortTransactions(transactions, filter, user?.id);
 
   if (error) {
     return (
       <Container className="py-5">
         <Alert variant="danger">{error}</Alert>
+      </Container>
+    );
+  }
+
+  // Show loading state if user is not loaded yet
+  if (!user) {
+    return (
+      <Container className="py-5">
+        <p>Loading...</p>
       </Container>
     );
   }
@@ -435,13 +551,16 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
               const requestDate = tx.requestDate ? new Date(tx.requestDate).toLocaleDateString() : 'Unknown';
               const requestTime = tx.requestDate ? new Date(tx.requestDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
+              const isTransactionActive = hasActiveButtons(tx, user, hiddenNotifications) || hasNewNotification(tx, user, hiddenNotifications);
+              
               return (
                 <div key={tx._id} className="col-lg-6 col-xl-4">
                   <Card 
                     className="modern-card h-100 border-0 shadow-sm"
                     style={{ 
                       cursor: 'pointer',
-                      opacity: ['completed', 'rejected', 'retracted'].includes(tx.status) ? 0.6 : 1,
+                      opacity: isTransactionActive ? 1 : 
+                        (['completed', 'rejected', 'retracted'].includes(tx.status) ? 0.6 : 1),
                       transition: 'all 0.2s ease'
                     }}
                     onClick={() => navigate(`/transactions/${tx._id}`)}
@@ -451,7 +570,24 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
                       <div className="d-flex justify-content-between align-items-start mb-3">
                         <div className="flex-grow-1 me-3">
                           <h5 className="card-title mb-2 fw-bold">{itemTitle}</h5>
-                          <StatusBadge status={tx.status} />
+                          <div className="d-flex gap-2 align-items-center">
+                            <StatusBadge status={tx.status} />
+                            {/* Payment notification for lender - only when status is borrowed (after pickup code) */}
+                            {user?.id === tx.lender?._id && tx.status === 'borrowed' && tx.paymentToLenderReleased && (
+                              <Badge 
+                                bg="success" 
+                                className="d-flex align-items-center gap-1"
+                                style={{ 
+                                  fontSize: '0.75rem',
+                                  padding: '0.4em 0.8em',
+                                  borderRadius: '15px',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                💰 Payment Received
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         {tx.item?.images && tx.item.images.length > 0 && (
                           <div 
@@ -475,9 +611,17 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
                       {/* Transaction details */}
                       <div className="mb-3">
                         <div className="text-muted small mb-2">
-                          <div className="d-flex justify-content-between">
+                          <div className="d-flex justify-content-between align-items-center">
                             <span>Borrower:</span>
-                            <span className="fw-medium text-dark">{borrowerName}</span>
+                            <div className="d-flex align-items-center">
+                              <span className="fw-medium text-dark me-2">{borrowerName}</span>
+                              {tx.borrower?.premiumStatus === 'active' && tx.status === 'requested' && (
+                                <span className="badge bg-warning text-dark" style={{ fontSize: '0.7rem' }}>
+                                  <i className="bi bi-star-fill me-1"></i>
+                                  Premium
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div className="d-flex justify-content-between">
                             <span>Lender:</span>
@@ -487,12 +631,52 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
                             <span>Requested:</span>
                             <span className="fw-medium text-dark">{requestDate} {requestTime}</span>
                           </div>
-                          {tx.item?.price && (
-                            <div className="d-flex justify-content-between">
-                              <span>Price:</span>
-                              <span className="fw-medium text-dark">€{tx.item.price}</span>
-                            </div>
+                          {tx.item?.price && tx.pricing && (
+                            <>
+                              <div className="d-flex justify-content-between align-items-center">
+                                <span>Total Cost:</span>
+                                <div className="d-flex align-items-center gap-2">
+                                  {tx.pricing.discountRate > 0 ? (
+                                    <>
+                                      <span className="text-decoration-line-through text-muted">
+                                        €{tx.pricing.originalPrice.toFixed(2)}
+                                      </span>
+                                      <span className="fw-medium text-success">
+                                        €{tx.pricing.finalPrice.toFixed(2)}
+                                      </span>
+                                      <span className="badge bg-warning text-dark" style={{ fontSize: '0.7rem' }}>
+                                        -{tx.pricing.discountRate}%
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="fw-medium text-dark">
+                                      €{tx.pricing.finalPrice.toFixed(2)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="d-flex justify-content-between align-items-center">
+                                <span className="text-muted small">Weekly Rate:</span>
+                                <div className="d-flex align-items-center gap-2">
+                                  {tx.pricing.discountRate > 0 ? (
+                                    <>
+                                      <span className="text-decoration-line-through text-muted small">
+                                        €{tx.pricing.weeklyRate.original}/week
+                                      </span>
+                                      <span className="text-success small">
+                                        €{tx.pricing.weeklyRate.final.toFixed(2)}/week
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-muted small">
+                                      €{tx.pricing.weeklyRate.original}/week
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </>
                           )}
+                          
                         </div>
                       </div>
 
@@ -502,6 +686,8 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
                           transaction={tx}
                           user={user}
                           onAction={fetchTransactions}
+                          hiddenNotifications={hiddenNotifications}
+                          onHideNotification={handleHideNotification}
                         />
                       </div>
                     </Card.Body>

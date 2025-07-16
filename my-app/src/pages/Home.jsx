@@ -199,25 +199,45 @@ export default function Home() {
               .map(item => (
                 <Col key={item._id}>
                   <Card className="h-100 modern-item-card">
-                    {item.images?.[0] && (
-                      <div style={{ height: '200px', overflow: 'hidden', borderRadius: '12px 12px 0 0' }}>
+                    <div style={{ height: '200px', overflow: 'hidden', borderRadius: '12px 12px 0 0' }}>
+                      {item.images?.[0] ? (
                         <Card.Img
                           variant="top"
                           src={`/api/items/${item._id}/image/0`}
                           style={{ 
                             height: '100%', 
                             width: '100%',
-                            objectFit: 'contain',
-                            objectPosition: 'center',
-                            backgroundColor: '#f8f9fa'
+                            objectFit: 'cover',
+                            objectPosition: 'center'
                           }}
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="item-image-placeholder">
+                          <div className="placeholder-content">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="#6c757d" opacity="0.5">
+                              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                            </svg>
+                            <span className="placeholder-text">No Image</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <Card.Body className="d-flex flex-column p-3">
-                      <Card.Title className="h6 fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                        {item.title}
-                      </Card.Title>
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <Card.Title className="h6 fw-bold mb-0" style={{ color: 'var(--text-primary)' }}>
+                          {item.title}
+                        </Card.Title>
+                        {item.isPremiumListing && (
+                          <span className="badge bg-white text-dark ms-2" style={{ 
+                            fontSize: '1.2rem', 
+                            fontWeight: 'bold',
+                            border: '1px solid #ddd',
+                            padding: '0.4rem 0.6rem'
+                          }}>
+                            👑
+                          </span>
+                        )}
+                      </div>
                       <Card.Subtitle className="mb-2 small text-muted">
                         {item.category}
                       </Card.Subtitle>
@@ -230,6 +250,7 @@ export default function Home() {
                         {item.description}
                       </Card.Text>
                       <div className="mb-3">
+                        {/* Regular pricing display */}
                         <span className="h5 fw-bold" style={{ color: 'var(--brand)' }}>
                           €{item.price.toFixed(2)}
                         </span>

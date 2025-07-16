@@ -4,14 +4,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext"; // Import AuthContext to access user and token
 import axios from "axios";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
-//import { set } from "mongoose";
 
 export default function Payment() {
-  const { id } = useParams(); //get the transaction ID from the URL
+  const { id } = useParams(); // transaction ID
   const [clientId, setClientId] = useState(null);
   const [error, setError] = useState(null);
-  const { user } = useContext(AuthContext); // Access user from AuthContext
-  const navigate = useNavigate(); // Use navigate to redirect after payment
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [transactionSummary, setTransactionSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,12 +26,17 @@ export default function Payment() {
         console.log("User from AuthContext:", user);
 
         if (id) {
+          // Fetch transaction details with timestamp to avoid caching
           const token = localStorage.getItem("token");
+          const timestamp = Date.now();
           const summaryResponse = await axios.get(
-            `/api/transactions/${id}/summary`,
+            `/api/transactions/${id}/summary?t=${timestamp}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
               },
             }
           );
@@ -89,20 +93,27 @@ export default function Payment() {
                 <PayPalButtons
                   style={{ layout: "vertical" }}
                   createOrder={(data, actions) => {
-                    const amount = transactionSummary.itemPrice || "9.99"; // Fallback amount if not available
+                    const rawAmount = transactionSummary.totalAmount || transactionSummary.itemPrice || "9.99";
+                    // Ensure amount has exactly 2 decimal places for PayPal
+                    const amount = parseFloat(rawAmount).toFixed(2);
                     console.log("Creating order with amount:", amount);
                     return actions.order.create({
                       purchase_units: [
                         {
                           amount: {
-                            value: amount.toString(), // Ensure amount is a string
+                            value: amount,
                           },
+                          payee: {
+                            email_address: "localloop@business.example.com"
+                          },
+                          description: `Rental payment for ${transactionSummary.itemTitle} - Localloop will distribute to lender`
                         },
                       ],
                     });
                   }}
                   onApprove={async (data, actions) => {
                     try {
+                      // Transaction payment approved
                       const details = await actions.order.capture();
                       console.log('Payment successful:', details);
 
@@ -110,7 +121,7 @@ export default function Payment() {
                       // PATCH: complete-payment
                       const paymentRes = await axios.patch(
                         `/api/transactions/${id}/complete-payment`,
-                        {},
+                        {}, // No PayPal payment ID needed for sandbox
                         { headers: { Authorization: `Bearer ${token}` } }
                       );
                       if (paymentRes.status !== 200) throw new Error('Payment update failed');
@@ -122,18 +133,14 @@ export default function Payment() {
                           {},
                           { headers: { Authorization: `Bearer ${token}` } }
                         );
-                        // You can check codeRes.status if you want, but don't throw if it fails
                       } catch (codeErr) {
-                        // Optionally log, but don't block navigation
                         console.warn('Pickup code generation failed (may already exist):', codeErr?.response?.data?.error || codeErr.message);
                       }
 
-                      // Only now: navigate to payment success
                       navigate(`/payment-success/${id}`);
                     } catch (error) {
                       console.error('Error:', error);
                       alert('Ein Fehler ist aufgetreten: ' + (error?.message || 'Unbekannter Fehler'));
-                      // Optionally: stay on page or navigate to error page
                     }
                   }}
                   onError={(err) => {
@@ -162,7 +169,34 @@ export default function Payment() {
                       <strong>Item:</strong> {transactionSummary.itemTitle}
                     </Card.Text>
                     <Card.Text>
-                      <strong>Price:</strong> €{transactionSummary.itemPrice}
+                      <strong>Rental Period:</strong><br />
+                      {new Date(transactionSummary.requestedFrom).toLocaleDateString()} - {new Date(transactionSummary.requestedTo).toLocaleDateString()}
+                    </Card.Text>
+                    <hr />
+                    <Card.Text>
+                      <strong>Rental Cost:</strong> €{transactionSummary.lendingFee}
+                    </Card.Text>
+                    <Card.Text>
+                      <strong>Security Deposit:</strong> €{transactionSummary.deposit}
+                    </Card.Text>
+                    {transactionSummary.premiumDiscount && (
+                      <>
+                        <Card.Text className="text-success">
+                          <strong>Premium Discount:</strong> -€{transactionSummary.premiumDiscount.discountAmount.toFixed(2)} ({transactionSummary.premiumDiscount.discountRate}% off)
+                        </Card.Text>
+                        <Card.Text className="text-muted small">
+                          Original Cost: €{transactionSummary.premiumDiscount.originalAmount.toFixed(2)}
+                        </Card.Text>
+                      </>
+                    )}
+                    <Card.Text className="fw-bold">
+                      <strong>Total Payment:</strong> €{transactionSummary.totalAmount}
+                    </Card.Text>
+                    <Card.Text className="text-muted small">
+                      Weekly Rate: €{transactionSummary.itemPrice}/week
+                    </Card.Text>
+                    <Card.Text className="text-muted small">
+                      * Deposit will be returned after item return
                     </Card.Text>
                     <Card.Text>
                       <strong>Status:</strong> {transactionSummary.status}
