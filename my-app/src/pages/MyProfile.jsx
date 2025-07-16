@@ -1,18 +1,63 @@
-// src/pages/MyProfile.jsx
+// src/import PremiumUpgradeModal from '../components/PremiumUpgradeModal';es/MyProfile.jsx
 import React, { useState, useEffect, useContext, useRef } from 'react'         // add useRef
-import { Container, Form, Button, Alert, Row, Col, Image, Card } from 'react-bootstrap' // import Row, Col, Image, Card
+import { Container, Form, Button, Alert, Row, Col, Image, Card, Badge, Modal, Toast, ToastContainer } from 'react-bootstrap' // import Row, Col, Image, Card, Toast
 import axios from 'axios'
-import { useNavigate, Link } from 'react-router-dom' 
+import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom' 
 import { AuthContext } from '../context/AuthContext.jsx'
 import RatingDisplay from '../components/RatingDisplay'
 import PasswordInput from '../components/PasswordInput'
+import { usePremium } from '../hooks/usePremium'
+import PremiumUpgradeModal from '../components/PremiumUpgradeModal'
 
 // Profile picture persistence implemented with authenticated blob fetching
 
 export default function MyProfile() {
   const { logout, user } = useContext(AuthContext)
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
   const fileInputRef = useRef()                                                 // define ref
+  
+  // Check for upgrade success
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [upgradeDetails, setUpgradeDetails] = useState(null);
+  
+  // Check URL parameters for upgrade success
+  useEffect(() => {
+    const upgraded = searchParams.get('upgraded');
+    const plan = searchParams.get('plan');
+    const price = searchParams.get('price');
+    
+    if (upgraded === 'true') {
+      setUpgradeDetails({
+        plan: plan || 'Premium',
+        price: price || '3.99'
+      });
+      setShowSuccessToast(true);
+      
+      // Clean up URL parameters
+      const newUrl = window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+      
+      // Auto-hide after 8 seconds
+      setTimeout(() => setShowSuccessToast(false), 8000);
+    }
+  }, [searchParams]);
+  
+  // Premium status hook
+  const { 
+    premiumStatus, 
+    subscription,
+    isPremium, 
+    maxListings, 
+    discountRate, 
+    upgradeToPremium, 
+    cancelPremium,
+    loading: premiumLoading 
+  } = usePremium();
+  
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -240,8 +285,29 @@ export default function MyProfile() {
     }
   }
 
+  const handlePremiumUpgrade = async (plan) => {
+    try {
+      await upgradeToPremium(plan);
+      setSuccess('Successfully upgraded to premium!');
+      setShowUpgradeModal(false);
+    } catch (err) {
+      setError('Failed to upgrade to premium. Please try again.');
+    }
+  };
+
+  const handlePremiumCancel = async () => {
+    try {
+      await cancelPremium();
+      setSuccess('Subscription cancelled successfully. Your premium benefits will continue until your current period ends.');
+      setShowCancelModal(false);
+    } catch (err) {
+      setError('Failed to cancel subscription. Please try again.');
+    }
+  };
+
   return (
     <Container fluid className="px-md-5" style={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
+      
       {/* Modern Hero Section */}
       <div className="hero-section bg-light p-4 p-md-5 mb-4">
         <div className="row align-items-center">
@@ -544,6 +610,148 @@ export default function MyProfile() {
             </Col>
           </Row>
 
+          {/* Premium Status Section */}
+          <Card className="border-0 shadow-sm modern-card mt-4">
+            <Card.Body className="p-4 p-md-5">
+              <div className="d-flex align-items-center justify-content-between mb-4">
+                <div className="d-flex align-items-center">
+                  <span className="me-3" style={{ fontSize: '1.5rem' }}>👑</span>
+                  <h4 className="fw-bold mb-0">Premium Status</h4>
+                </div>
+                {isPremium && (
+                  <Badge bg="success" className="rounded-pill px-3 py-2">
+                    <i className="bi bi-check-circle me-1"></i>
+                    Premium Active
+                  </Badge>
+                )}
+              </div>
+
+              {!premiumLoading && (
+                <Row className="g-4">
+                  <Col md={6}>
+                    <div className="bg-light rounded-3 p-4">
+                      <h6 className="fw-bold mb-3">Current Plan</h6>
+                      <div className="mb-2">
+                        <span className="text-muted">Status: </span>
+                        <span className={`fw-semibold ${isPremium ? 'text-success' : 'text-muted'}`}>
+                          {isPremium ? 'Premium' : 'Free'}
+                        </span>
+                      </div>
+                      <div className="mb-2">
+                        <span className="text-muted">Item Listings: </span>
+                        <span className="fw-semibold">
+                          {isPremium ? 'Unlimited' : `${maxListings} maximum`}
+                        </span>
+                      </div>
+                      <div className="mb-2">
+                        <span className="text-muted">Rental Discount: </span>
+                        <span className="fw-semibold">
+                          {discountRate > 0 ? `${discountRate}%` : 'None'}
+                        </span>
+                      </div>
+                      {subscription && (
+                        <>
+                          <div className="mb-2">
+                            <span className="text-muted">Plan: </span>
+                            <span className="fw-semibold text-capitalize">
+                              {subscription.plan}
+                            </span>
+                          </div>
+                          <div className="mb-2">
+                            <span className="text-muted">Expires: </span>
+                            <span className="fw-semibold">
+                              {new Date(subscription.endDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="mb-2">
+                            <span className="text-muted">Auto-renewal: </span>
+                            <span className={`fw-semibold ${subscription.autoRenew ? 'text-success' : 'text-warning'}`}>
+                              {subscription.status === 'cancelled' ? 'Cancelled' : subscription.autoRenew ? 'Active' : 'Disabled'}
+                            </span>
+                          </div>
+                          {subscription.status === 'cancelled' && (
+                            <div className="mb-2">
+                              <span className="text-muted">Cancelled: </span>
+                              <span className="fw-semibold text-warning">
+                                {new Date(subscription.cancelledAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </Col>
+                  
+                  <Col md={6}>
+                    <div className="bg-light rounded-3 p-4">
+                      <h6 className="fw-bold mb-3">Premium Benefits</h6>
+                      <ul className="list-unstyled mb-0">
+                        <li className="mb-2">
+                          <i className={`bi bi-check-circle${isPremium ? '-fill text-success' : ' text-muted'} me-2`}></i>
+                          Unlimited item listings
+                        </li>
+                        <li className="mb-2">
+                          <i className={`bi bi-check-circle${isPremium ? '-fill text-success' : ' text-muted'} me-2`}></i>
+                          10% discount on all rentals
+                        </li>
+                        <li className="mb-2">
+                          <i className={`bi bi-check-circle${isPremium ? '-fill text-success' : ' text-muted'} me-2`}></i>
+                          Priority listing visibility
+                        </li>
+                        <li className="mb-2">
+                          <i className={`bi bi-check-circle${isPremium ? '-fill text-success' : ' text-muted'} me-2`}></i>
+                          Priority in rental requests
+                        </li>
+                        <li>
+                          <i className={`bi bi-check-circle${isPremium ? '-fill text-success' : ' text-muted'} me-2`}></i>
+                          Item view analytics & statistics
+                        </li>
+                      </ul>
+                    </div>
+                  </Col>
+                </Row>
+              )}
+
+              <div className="d-flex gap-3 mt-4">
+                {!isPremium ? (
+                  <Button 
+                    variant="primary" 
+                    size="lg"
+                    className="rounded-pill px-4"
+                    onClick={() => setShowUpgradeModal(true)}
+                  >
+                    <span className="me-2">👑</span>
+                    Upgrade to Premium
+                  </Button>
+                ) : subscription?.status === 'cancelled' ? (
+                  <div className="d-flex flex-column gap-2">
+                    <Button 
+                      variant="primary" 
+                      size="lg"
+                      className="rounded-pill px-4"
+                      onClick={() => setShowUpgradeModal(true)}
+                    >
+                      <span className="me-2">🔄</span>
+                      Renew Premium
+                    </Button>
+                    <small className="text-muted">
+                      Your current premium benefits will continue until {subscription && new Date(subscription.endDate).toLocaleDateString()}
+                    </small>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="outline-danger" 
+                    size="lg"
+                    className="rounded-pill px-4"
+                    onClick={() => setShowCancelModal(true)}
+                  >
+                    Cancel Subscription
+                  </Button>
+                )}
+              </div>
+            </Card.Body>
+          </Card>
+
           {/* Password Change Section */}
           <Card className="border-0 shadow-sm modern-card mt-4">
             <Card.Body className="p-4 p-md-5">
@@ -631,6 +839,99 @@ export default function MyProfile() {
           </Card>
         </Col>
       </Row>
+      
+      {/* Premium Upgrade Modal */}
+      <PremiumUpgradeModal
+        show={showUpgradeModal}
+        onHide={() => setShowUpgradeModal(false)}
+        currentListings={0} // Not used in profile context
+        maxListings={maxListings}
+        context="profile"
+      />
+      
+      {/* Cancel Premium Confirmation Modal */}
+      <Modal show={showCancelModal} onHide={() => setShowCancelModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Cancel Subscription</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="warning">
+            <strong>Are you sure you want to cancel subscription?</strong>
+            <br /><br />
+            Your premium benefits will continue until {subscription?.endDate && new Date(subscription.endDate).toLocaleDateString()}.
+            After that, your subscription will not automatically renew and you'll return to the free plan.
+            You can always upgrade again later.
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowCancelModal(false)}>
+            Keep Subscription
+          </Button>
+          <Button variant="danger" onClick={handlePremiumCancel}>
+            Cancel Subscription
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Premium Upgrade Success Toast */}
+      <ToastContainer 
+        position="top-end" 
+        className="p-3" 
+        style={{ zIndex: 9999 }}
+      >
+        <Toast 
+          show={showSuccessToast} 
+          onClose={() => setShowSuccessToast(false)}
+          className="border-0 shadow-lg"
+          style={{ 
+            minWidth: '400px',
+            background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+            color: 'white'
+          }}
+        >
+          <Toast.Header 
+            className="border-0 text-white"
+            style={{ 
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(10px)'
+            }}
+          >
+            <div className="me-2" style={{ fontSize: '1.5em' }}>🎉👑</div>
+            <strong className="me-auto">Premium Upgrade Successful!</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white p-3">
+            <div className="text-center mb-3">
+              <div style={{ fontSize: '2.5em', marginBottom: '8px' }}>🚀</div>
+              <h5 className="mb-1">Welcome to Premium!</h5>
+              <div className="mb-2">
+                <strong>{upgradeDetails?.plan?.charAt(0).toUpperCase() + upgradeDetails?.plan?.slice(1)} Plan</strong> - €{upgradeDetails?.price}
+                {upgradeDetails?.plan === 'yearly' && (
+                  <Badge bg="warning" className="ms-2 text-dark">25% Saved!</Badge>
+                )}
+              </div>
+            </div>
+            
+            <div className="small mb-3">
+              <Row>
+                <Col xs={6}>
+                  <div className="mb-1">✅ <strong>Unlimited listings</strong></div>
+                  <div className="mb-1">✅ <strong>10% discount</strong></div>
+                </Col>
+                <Col xs={6}>
+                  <div className="mb-1">✅ <strong>Priority features</strong></div>
+                  <div className="mb-1">✅ <strong>Analytics access</strong></div>
+                </Col>
+              </Row>
+            </div>
+            
+            <div className="text-center">
+              <small style={{ opacity: 0.9 }}>
+                🎯 Start enjoying your premium benefits immediately!
+              </small>
+            </div>
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
     </Container>
   )
 }

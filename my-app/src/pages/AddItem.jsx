@@ -11,6 +11,7 @@ import Card from 'react-bootstrap/Card';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { useAddItem } from '../hooks/useAddItem';
+import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 
 const categories = [
   'Electronics', 
@@ -35,6 +36,8 @@ export default function AddItem() {
         imagePreviews,
         error,
         availability,
+        showUpgradeModal,
+        limitError,
         handleTitleChange,
         handleDescriptionChange,
         handlePriceChange,
@@ -42,7 +45,9 @@ export default function AddItem() {
         handleImageChange,
         handleImageRemove,
         handleAvailabilityChange,
-        handleSubmit
+        handleSubmit,
+        handleUpgrade,
+        setShowUpgradeModal
     } = useAddItem();
  
     if (!user) {
@@ -312,6 +317,15 @@ export default function AddItem() {
                     </Card>
                 </Col>
             </Row>
+            
+            {/* Premium Upgrade Modal */}
+            <PremiumUpgradeModal
+                show={showUpgradeModal}
+                onHide={() => setShowUpgradeModal(false)}
+                currentListings={limitError?.currentListings}
+                maxListings={limitError?.maxListings}
+                onUpgrade={handleUpgrade}
+            />
         </Container>
     );
 }

@@ -38,8 +38,15 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  // Function to update user data (e.g., after premium upgrade)
+  const updateUser = (userData) => {
+    const updatedUser = { ...user, ...userData }
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+    setUser(updatedUser)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

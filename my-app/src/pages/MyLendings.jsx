@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useContext, useState } from 'react';
+import { Alert, Button } from 'react-bootstrap';
+import { AuthContext } from '../context/AuthContext';
 import TransactionList from '../components/TransactionList';
+import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
+import { usePremium } from '../hooks/usePremium';
 
 const STATUS_OPTIONS = [
   'requested',
@@ -13,11 +17,40 @@ const STATUS_OPTIONS = [
 ];
 
 export default function MyLendings() {
+  const { user } = useContext(AuthContext);
+  const { isPremium } = usePremium();
+  const [showModal, setShowModal] = useState(false);
+
   return (
-    <TransactionList
-      endpoint="/api/transactions/lendings"
-      title="My Lendings"
-      statusOptions={STATUS_OPTIONS}
-    />
+    <div>
+      {user && !isPremium && (
+        <Alert variant="warning" className="mb-4">
+          <div className="d-flex justify-content-between align-items-center">
+            <span>
+              ⭐ <strong>Boost Your Listings!</strong> Premium items appear first in search results, getting more views and requests.
+            </span>
+            <Button 
+              variant="warning" 
+              size="sm"
+              onClick={() => setShowModal(true)}
+            >
+              Upgrade Now
+            </Button>
+          </div>
+        </Alert>
+      )}
+      
+      <TransactionList
+        endpoint="/api/transactions/lendings"
+        title="My Lendings"
+        statusOptions={STATUS_OPTIONS}
+      />
+
+      <PremiumUpgradeModal 
+        show={showModal} 
+        onHide={() => setShowModal(false)}
+        context="priority-listing"
+      />
+    </div>
   );
 }

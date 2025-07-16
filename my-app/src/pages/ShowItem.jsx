@@ -6,9 +6,12 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Col, Container, Row, Alert, Spinner } from 'react-bootstrap';
 import axios from 'axios';
+import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
+import { usePremium } from '../hooks/usePremium';
 
 export default function ShowItem() {
     const { user } = useContext(AuthContext);
+    const { isPremium } = usePremium();
     const { item, loading, error, handleDelete } = useShowItem();
     const navigate = useNavigate();
     const [selectedRange, setSelectedRange] = useState();
@@ -16,6 +19,7 @@ export default function ShowItem() {
     const [showImageModal, setShowImageModal] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isRequestingBorrow, setIsRequestingBorrow] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     useEffect(() => {
         if (!item || !item._id) return;
@@ -31,6 +35,31 @@ export default function ShowItem() {
         };
         fetchUnavailable();
     }, [item?._id]);
+
+    // Helper function to calculate rental costs with premium pricing
+    const calculateRentalCosts = (range, pricing) => {
+        if (!range?.from || !range?.to || !pricing) {
+            return { rentalCost: 0, deposit: 0, total: 0, weeks: 0 };
+        }
+
+        const days = Math.ceil((range.to - range.from) / (1000 * 60 * 60 * 24)) + 1;
+        const weeks = Math.ceil(days / 7);
+        
+        const rentalCost = weeks * pricing.finalPrice;
+        const deposit = pricing.originalPrice * 5; // Deposit is always based on original price
+        const total = rentalCost + deposit;
+
+        return { rentalCost, deposit, total, weeks };
+    };
+
+    // Use pricing from item data (already includes premium pricing if user is premium)
+    const pricingInfo = item?.pricing || {
+        originalPrice: item?.price || 0,
+        finalPrice: item?.price || 0,
+        discountRate: 0,
+        discountAmount: 0,
+        isPremium: false
+    };
 
     const handleRequestBorrow = async () => {
         if (!selectedRange?.from || !selectedRange?.to) {
@@ -197,7 +226,38 @@ export default function ShowItem() {
                                     <h1 className="display-5 fw-bold text-primary mb-2">{item.title}</h1>
                                     <div className="d-flex align-items-center gap-3 mb-3">
                                         <span className="badge bg-primary fs-6 px-3 py-2">{item.category}</span>
-                                        <span className="text-success fw-bold fs-4">€{item.price}/week</span>
+                                        
+                                        {/* Price display with premium discount */}
+                                        <div className="d-flex align-items-center gap-2">
+                                            {pricingInfo?.isPremium && pricingInfo?.discountRate > 0 ? (
+                                                <>
+                                                    <span className="text-muted text-decoration-line-through fs-6">
+                                                        €{pricingInfo.originalPrice}/week
+                                                    </span>
+                                                    <span className="text-success fw-bold fs-4">
+                                                        €{pricingInfo.finalPrice.toFixed(2)}/week
+                                                    </span>
+                                                    <span className="badge bg-success">
+                                                        -{pricingInfo.discountRate}%
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="text-success fw-bold fs-4">
+                                                    €{pricingInfo?.finalPrice?.toFixed(2) || item.price}/week
+                                                </span>
+                                            )}
+                                        </div>
+                                        
+                                        {user && !isPremium && (
+                                            <Button 
+                                                variant="warning" 
+                                                size="sm"
+                                                onClick={() => setShowUpgradeModal(true)}
+                                                className="ms-2"
+                                            >
+                                                👑 Get 10% OFF with Premium!
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
 
@@ -270,7 +330,7 @@ export default function ShowItem() {
                                             </div>
                                         </div>
 
-                                        {selectedRange?.from && selectedRange?.to && (
+                                        {selectedRange?.from && selectedRange?.to && pricingInfo && (
                                             <div className="booking-summary mb-4 p-3 bg-success bg-opacity-10 rounded-3 border border-success border-opacity-25">
                                                 <h6 className="text-success mb-2">
                                                     <span className="me-2">✅</span>
@@ -279,21 +339,44 @@ export default function ShowItem() {
                                                 <p className="mb-2 small">
                                                     <strong>Dates:</strong> {selectedRange.from.toLocaleDateString()} – {selectedRange.to.toLocaleDateString()}
                                                 </p>
-                                                <div className="small mb-2">
-                                                    <div className="d-flex justify-content-between mb-1">
-                                                        <span>Rental cost:</span>
-                                                        <span>€{computeWeeklyCharge(selectedRange, item.price)}</span>
-                                                    </div>
-                                                    <div className="d-flex justify-content-between mb-1">
-                                                        <span>Security deposit:</span>
-                                                        <span>€{item.price * 5}</span>
-                                                    </div>
-                                                    <hr className="my-2" />
-                                                    <div className="d-flex justify-content-between fw-bold text-success">
-                                                        <span>Total payment:</span>
-                                                        <span>€{computeWeeklyCharge(selectedRange, item.price) + item.price * 5}</span>
-                                                    </div>
-                                                </div>
+                                                {(() => {
+                                                    const costs = calculateRentalCosts(selectedRange, pricingInfo);
+                                                    return (
+                                                        <div className="small mb-2">
+                                                            <div className="d-flex justify-content-between mb-1">
+                                                                <span>Rental cost ({costs.weeks} week{costs.weeks !== 1 ? 's' : ''}):</span>
+                                                                <div className="d-flex align-items-center gap-2">
+                                                                    {pricingInfo.isPremium && pricingInfo.discountRate > 0 && (
+                                                                        <span className="text-muted text-decoration-line-through">
+                                                                            €{(costs.weeks * pricingInfo.originalPrice).toFixed(2)}
+                                                                        </span>
+                                                                    )}
+                                                                    <span className={pricingInfo.isPremium && pricingInfo.discountRate > 0 ? "text-success fw-bold" : ""}>
+                                                                        €{costs.rentalCost.toFixed(2)}
+                                                                    </span>
+                                                                    {pricingInfo.isPremium && pricingInfo.discountRate > 0 && (
+                                                                        <span className="badge bg-success">-{pricingInfo.discountRate}%</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="d-flex justify-content-between mb-1">
+                                                                <span>Security deposit:</span>
+                                                                <span>€{costs.deposit.toFixed(2)}</span>
+                                                            </div>
+                                                            <hr className="my-2" />
+                                                            <div className="d-flex justify-content-between fw-bold text-success">
+                                                                <span>Total payment:</span>
+                                                                <span>€{costs.total.toFixed(2)}</span>
+                                                            </div>
+                                                            {pricingInfo.isPremium && pricingInfo.discountRate > 0 && (
+                                                                <div className="d-flex justify-content-between text-success small">
+                                                                    <span>You save:</span>
+                                                                    <span>€{(costs.weeks * pricingInfo.discountAmount).toFixed(2)}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                                 <p className="mb-0 small text-muted">
                                                     <em>Note: Security deposit will be returned after item return</em>
                                                 </p>
@@ -424,6 +507,13 @@ export default function ShowItem() {
                     </div>
                 </div>
             )}
+
+            {/* Premium Upgrade Modal */}
+            <PremiumUpgradeModal 
+                show={showUpgradeModal} 
+                onHide={() => setShowUpgradeModal(false)}
+                context="discount"
+            />
         </Container>
     );
 }
