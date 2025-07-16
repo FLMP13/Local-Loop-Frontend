@@ -370,14 +370,6 @@ function ActionButtons({ transaction, user, onAction, hiddenNotifications = new 
   return null;
 }
 
-// Helper function to calculate total rental cost based on duration and weekly rate
-function computeWeeklyCharge(from, to, weeklyRate) {
-  if (!from || !to || !weeklyRate) return 0;
-  const days = Math.ceil((new Date(to) - new Date(from)) / (1000 * 60 * 60 * 24)) + 1;
-  const weeks = Math.ceil(days / 7);
-  return weeks * weeklyRate;
-}
-
 // Helper function to check if there are new notifications for the borrower
 function hasNewNotification(transaction, user, hiddenNotifications) {
   if (!user || !transaction) return false;
@@ -400,7 +392,12 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
   const { user } = useContext(AuthContext);
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState({
+    name: '',
+    maxPrice: '',
+    status: '',
+    sortBy: 'date_desc'
+  });
   const [hiddenNotifications, setHiddenNotifications] = useState(() => {
     const saved = localStorage.getItem('hiddenNotifications');
     return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -456,9 +453,15 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
       return true;
     });
 
-    // Sort by: 1) Active buttons first, 2) Date (newest first or as specified)
+    // Sort by: 1) Active buttons first (except for "requested" status), 2) Date (newest first or as specified)
     filtered = filtered.sort((a, b) => {
-      // Check for active buttons properly
+      // For "requested" status, keep backend sorting order (already sorted by premium status and date)
+      if (a.status === 'requested' && b.status === 'requested') {
+        // Keep original array order
+        return 0;
+      }
+      
+      // For other statuses, keep the active buttons sorting
       const aHasButtons = userId ? hasActiveButtons(a, { id: userId }, hiddenNotifications) : false;
       const bHasButtons = userId ? hasActiveButtons(b, { id: userId }, hiddenNotifications) : false;
       
@@ -472,9 +475,9 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
       
       // If both have or don't have buttons, sort by date
       if (filter.sortBy === 'date_asc') {
-        return new Date(a.requestDate) - new Date(b.requestDate);
+        return new Date(a.requestDate || a.requestedFrom) - new Date(b.requestDate || b.requestedFrom);
       }
-      return new Date(b.requestDate) - new Date(a.requestDate);
+      return new Date(b.requestDate || b.requestedFrom) - new Date(a.requestDate || a.requestedFrom);
     });
 
     return filtered;
@@ -608,9 +611,17 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
                       {/* Transaction details */}
                       <div className="mb-3">
                         <div className="text-muted small mb-2">
-                          <div className="d-flex justify-content-between">
+                          <div className="d-flex justify-content-between align-items-center">
                             <span>Borrower:</span>
-                            <span className="fw-medium text-dark">{borrowerName}</span>
+                            <div className="d-flex align-items-center">
+                              <span className="fw-medium text-dark me-2">{borrowerName}</span>
+                              {tx.borrower?.premiumStatus === 'active' && tx.status === 'requested' && (
+                                <span className="badge bg-warning text-dark" style={{ fontSize: '0.7rem' }}>
+                                  <i className="bi bi-star-fill me-1"></i>
+                                  Premium
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div className="d-flex justify-content-between">
                             <span>Lender:</span>
@@ -620,19 +631,50 @@ export default function TransactionList({ endpoint, title, statusOptions, onTran
                             <span>Requested:</span>
                             <span className="fw-medium text-dark">{requestDate} {requestTime}</span>
                           </div>
-                          {tx.item?.price && (
-                            <div className="d-flex justify-content-between">
-                              <span>Total Cost:</span>
-                              <span className="fw-medium text-dark">
-                                €{computeWeeklyCharge(tx.requestedFrom, tx.requestedTo, tx.item.price)}
-                              </span>
-                            </div>
-                          )}
-                          {tx.item?.price && (
-                            <div className="d-flex justify-content-between">
-                              <span className="text-muted small">Weekly Rate:</span>
-                              <span className="text-muted small">€{tx.item.price}/week</span>
-                            </div>
+                          {tx.item?.price && tx.pricing && (
+                            <>
+                              <div className="d-flex justify-content-between align-items-center">
+                                <span>Total Cost:</span>
+                                <div className="d-flex align-items-center gap-2">
+                                  {tx.pricing.discountRate > 0 ? (
+                                    <>
+                                      <span className="text-decoration-line-through text-muted">
+                                        €{tx.pricing.originalPrice.toFixed(2)}
+                                      </span>
+                                      <span className="fw-medium text-success">
+                                        €{tx.pricing.finalPrice.toFixed(2)}
+                                      </span>
+                                      <span className="badge bg-warning text-dark" style={{ fontSize: '0.7rem' }}>
+                                        -{tx.pricing.discountRate}%
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="fw-medium text-dark">
+                                      €{tx.pricing.finalPrice.toFixed(2)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="d-flex justify-content-between align-items-center">
+                                <span className="text-muted small">Weekly Rate:</span>
+                                <div className="d-flex align-items-center gap-2">
+                                  {tx.pricing.discountRate > 0 ? (
+                                    <>
+                                      <span className="text-decoration-line-through text-muted small">
+                                        €{tx.pricing.weeklyRate.original}/week
+                                      </span>
+                                      <span className="text-success small">
+                                        €{tx.pricing.weeklyRate.final.toFixed(2)}/week
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-muted small">
+                                      €{tx.pricing.weeklyRate.original}/week
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </>
                           )}
                           
                         </div>

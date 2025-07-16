@@ -215,9 +215,21 @@ export default function Home() {
                       </div>
                     )}
                     <Card.Body className="d-flex flex-column p-3">
-                      <Card.Title className="h6 fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                        {item.title}
-                      </Card.Title>
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <Card.Title className="h6 fw-bold mb-0" style={{ color: 'var(--text-primary)' }}>
+                          {item.title}
+                        </Card.Title>
+                        {item.isPremiumListing && (
+                          <span className="badge bg-white text-dark ms-2" style={{ 
+                            fontSize: '1.2rem', 
+                            fontWeight: 'bold',
+                            border: '1px solid #ddd',
+                            padding: '0.4rem 0.6rem'
+                          }}>
+                            👑
+                          </span>
+                        )}
+                      </div>
                       <Card.Subtitle className="mb-2 small text-muted">
                         {item.category}
                       </Card.Subtitle>
@@ -230,6 +242,7 @@ export default function Home() {
                         {item.description}
                       </Card.Text>
                       <div className="mb-3">
+                        {/* Regular pricing display */}
                         <span className="h5 fw-bold" style={{ color: 'var(--brand)' }}>
                           €{item.price.toFixed(2)}
                         </span>

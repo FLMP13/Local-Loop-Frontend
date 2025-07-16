@@ -22,7 +22,6 @@ export default function Login() {
     try {
       // call login API
       const res = await axios.post('/api/auth/login', credentials)
-      console.log(res.data)
       // store token and user in context
       login({
         token: res.data.token,

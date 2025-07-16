@@ -22,12 +22,14 @@ import MyItems from './pages/MyItems.jsx';
 import MyBorrowings from './pages/MyBorrowings.jsx'; 
 import MyLendings from './pages/MyLendings.jsx'; 
 import Payment from './pages/Payment.jsx';
+import PremiumPayment from './pages/PremiumPayment.jsx';
 import PaymentSuccess from './pages/PaymentSuccess.jsx';
 import UserReviews from './pages/UserReview.jsx';
 import logo from './assets/logo.png'
 import { AuthContext } from './context/AuthContext.jsx' 
 import ShowTransaction from './pages/ShowTransaction';
-import EditTransaction from './pages/EditTransaction.jsx';
+import EditTransaction from './pages/EditTransaction';
+import RenewalNotification from './components/RenewalNotification';
 import { Search } from 'react-bootstrap-icons';
 import { Prev } from 'react-bootstrap/esm/PageItem.js';
 import { 
@@ -328,10 +330,14 @@ export default function App() {
           <Route path="/items/:id/edit" element={<EditItem />} />
           <Route path="/transactions/:id" element={<ShowTransaction />} />
           <Route path="/payment/:id" element={<Payment />} />
+          <Route path="/premium-payment/:plan" element={<PremiumPayment />} />
           <Route path="/payment-success/:transactionId" element={<PaymentSuccess />} />
           <Route path="/transactions/:id/edit" element={<EditTransaction />} />
           <Route path="/users/:userId/reviews" element={<UserReviews />} />
         </Routes>
+        
+        {/* Global renewal notification component */}
+        <RenewalNotification />
       </>
     </CounterContext.Provider>
   );
