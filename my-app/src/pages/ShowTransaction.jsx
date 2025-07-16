@@ -443,9 +443,7 @@ export default function ShowTransaction() {
         // Show payment success popup for lender (who enters the code)
         // The lender receives payment when borrower's pickup code is confirmed
         setShowPaymentSuccess(true);
-        setTimeout(() => {
-          setShowPaymentSuccess(false);
-        }, 8000);
+        // Message will stay visible until user manually dismisses it
         
         // If this is a different user session (borrower not present), save notification for lender
         // The payment success is already shown for current lender, but if lender logs in later, they should see it
