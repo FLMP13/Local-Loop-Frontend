@@ -24,7 +24,7 @@ import MyLendings from './pages/MyLendings.jsx';
 import Payment from './pages/Payment.jsx';
 import PaymentSuccess from './pages/PaymentSuccess.jsx';
 import UserReviews from './pages/UserReview.jsx';
-import logo from './assets/logo.png'
+import logo from './assets/logo-no-background.png'
 import { AuthContext } from './context/AuthContext.jsx' 
 import ShowTransaction from './pages/ShowTransaction';
 import EditTransaction from './pages/EditTransaction.jsx';
@@ -185,12 +185,17 @@ export default function App() {
       <>
         <Navbar expand="lg" className="navbar-light bg-white shadow-sm">
           <Container>
-            <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
+            <Navbar.Brand 
+              as={Link} 
+              to="/" 
+              className="d-flex align-items-center p-0 transparent-brand-button"
+              style={{ textDecoration: 'none', backgroundColor: 'transparent', border: 'none' }}
+            >
               <img
                 src={logo}
                 alt="Local Loop"
-                style={{ height: '50px' }}
-                className="d-inline-block align-top"
+                style={{ height: '120px', width: '120px'}}
+                className="d-inline-block align-top logo-image"
               />
             </Navbar.Brand>
             

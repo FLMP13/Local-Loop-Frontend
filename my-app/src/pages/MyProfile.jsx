@@ -7,7 +7,7 @@ import { AuthContext } from '../context/AuthContext.jsx'
 import RatingDisplay from '../components/RatingDisplay'
 import PasswordInput from '../components/PasswordInput'
 
-//TODO: Profile pic persistence
+// Profile picture persistence implemented with authenticated blob fetching
 
 export default function MyProfile() {
   const { logout, user } = useContext(AuthContext)
@@ -26,6 +26,8 @@ export default function MyProfile() {
     borrowerRating: { average: 0, count: 0 }
   })
   const [avatarFile, setAvatarFile] = useState(null)
+  const [avatarBlobUrl, setAvatarBlobUrl] = useState(null)
+  const [deleteAvatar, setDeleteAvatar] = useState(false)
   const [passwords, setPasswords] = useState({
     oldPassword: '',
     newPassword: '',
@@ -61,12 +63,15 @@ export default function MyProfile() {
          email,
          zipCode,
          bio,
-         avatarUrl: profilePic
-           ? '/api/users/me/avatar'   // stream existing picture
-           : '',                      // no pic yet
+         avatarUrl: profilePic ? '/api/users/me/avatar' : '',
          lenderRating,
          borrowerRating
        })
+
+       // Fetch avatar with authentication if it exists
+       if (profilePic) {
+         await fetchAvatarBlob()
+       }
       } catch (err) {
         console.error(err)
         setError('Failed to load profile.')
@@ -74,6 +79,32 @@ export default function MyProfile() {
     }
     fetchProfile()
   }, [])
+
+  // Cleanup effect to revoke object URLs
+  useEffect(() => {
+    return () => {
+      if (avatarBlobUrl) {
+        URL.revokeObjectURL(avatarBlobUrl)
+      }
+      if (formData.avatarUrl && formData.avatarUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(formData.avatarUrl)
+      }
+    }
+  }, [avatarBlobUrl, formData.avatarUrl])
+
+  const fetchAvatarBlob = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.get('/api/users/me/avatar', {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      })
+      const blobUrl = URL.createObjectURL(response.data)
+      setAvatarBlobUrl(blobUrl)
+    } catch (err) {
+      console.error('Failed to fetch avatar:', err)
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -91,11 +122,36 @@ export default function MyProfile() {
     const file = e.target.files[0]
     if (file) {
       setAvatarFile(file)
+      setDeleteAvatar(false) // Reset delete flag when new file is selected
+      // Clear the existing blob URL since we have a new file
+      if (avatarBlobUrl) {
+        URL.revokeObjectURL(avatarBlobUrl)
+        setAvatarBlobUrl(null)
+      }
       setFormData(fd => ({
         ...fd,
         avatarUrl: URL.createObjectURL(file)
       }))
     }
+  }
+
+  const handleDeleteAvatar = () => {
+    setDeleteAvatar(true)
+    setAvatarFile(null)
+    
+    // Clear existing URLs
+    if (avatarBlobUrl) {
+      URL.revokeObjectURL(avatarBlobUrl)
+      setAvatarBlobUrl(null)
+    }
+    if (formData.avatarUrl && formData.avatarUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(formData.avatarUrl)
+    }
+    
+    setFormData(fd => ({
+      ...fd,
+      avatarUrl: ''
+    }))
   }
 
   const handleProfileSubmit = async e => {
@@ -109,7 +165,12 @@ export default function MyProfile() {
       data.append('email',    formData.email)
       data.append('zipCode',  formData.zipCode)
       data.append('bio',      formData.bio)
-      if (avatarFile) data.append('avatar', avatarFile)
+      
+      if (deleteAvatar) {
+        data.append('deleteAvatar', 'true')
+      } else if (avatarFile) {
+        data.append('avatar', avatarFile)
+      }
 
       await axios.put(
         '/api/users/me',
@@ -123,6 +184,24 @@ export default function MyProfile() {
       )
       
       setSuccess('Profile updated!')
+      setAvatarFile(null) // Clear the file after successful upload
+      setDeleteAvatar(false) // Reset delete flag
+      
+      // If we uploaded a new avatar, refresh the blob URL
+      if (avatarFile) {
+        // Clear the old blob URL first
+        if (avatarBlobUrl) {
+          URL.revokeObjectURL(avatarBlobUrl)
+        }
+        // Fetch the new avatar blob
+        await fetchAvatarBlob()
+      } else if (deleteAvatar) {
+        // Avatar was deleted, clear everything
+        if (avatarBlobUrl) {
+          URL.revokeObjectURL(avatarBlobUrl)
+          setAvatarBlobUrl(null)
+        }
+      }
     } catch (err) {
       console.error(err)
       setError('Update failed.')
@@ -220,65 +299,81 @@ export default function MyProfile() {
                     <div className="mb-5">
                       <Row className="align-items-center">
                         <Col xs="auto">
-                          <div className="position-relative">
-                            <div
-                              className="avatar-upload-container"
-                              style={{
-                                width: '120px',
-                                height: '120px',
-                                borderRadius: '50%',
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                backgroundColor: '#f8f9fa',
-                                border: '3px solid #e9ecef',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s ease',
-                                position: 'relative'
-                              }}
-                              onClick={handleAvatarClick}
-                              onMouseEnter={(e) => {
-                                e.target.style.borderColor = 'var(--brand)';
-                                e.target.style.transform = 'scale(1.02)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.borderColor = '#e9ecef';
-                                e.target.style.transform = 'scale(1)';
-                              }}
-                            >
-                              {formData.avatarUrl ? (
-                                <Image 
-                                  src={formData.avatarUrl} 
-                                  style={{ 
-                                    width: '100%', 
-                                    height: '100%', 
-                                    objectFit: 'cover' 
-                                  }} 
-                                />
-                              ) : (
-                                <div className="text-center">
-                                  <div style={{ fontSize: '2rem', color: '#6c757d' }}>👤</div>
-                                  <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '500' }}>
-                                    Upload Photo
-                                  </div>
-                                </div>
-                              )}
-                              <div 
-                                className="position-absolute bottom-0 end-0 bg-primary rounded-circle d-flex align-items-center justify-content-center"
-                                style={{ width: '32px', height: '32px', border: '3px solid white' }}
+                          <div className="d-flex flex-column align-items-center">
+                            <div className="position-relative mb-3">
+                              <div
+                                className="avatar-upload-container"
+                                onClick={handleAvatarClick}
                               >
-                                <span style={{ fontSize: '0.75rem', color: 'white' }}>📷</span>
+                                {((avatarBlobUrl || formData.avatarUrl) && !deleteAvatar) ? (
+                                  <>
+                                    <Image 
+                                      src={avatarFile ? formData.avatarUrl : avatarBlobUrl} 
+                                      className="avatar-image"
+                                    />
+                                    {/* Overlay for hover effect */}
+                                    <div className="avatar-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                                      <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                                        <path d="M12 15.5c1.38 0 2.5-1.12 2.5-2.5S13.38 10.5 12 10.5 9.5 11.62 9.5 13s1.12 2.5 2.5 2.5zm0-1c-.83 0-1.5-.67-1.5-1.5S11.17 11.5 12 11.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                                        <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 14H4V7h16v12z"/>
+                                      </svg>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-center">
+                                    <div className="avatar-placeholder-icon mb-2">
+                                      <svg width="64" height="64" viewBox="0 0 24 24" fill="#6c757d">
+                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                      </svg>
+                                    </div>
+                                    <div className="avatar-placeholder-text">
+                                      Click to upload<br />
+                                      <span className="avatar-placeholder-subtext">your photo</span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
+                              <Form.Control
+                                type="file"
+                                name="avatar" 
+                                accept="image/*"
+                                ref={fileInputRef}
+                                onChange={handleAvatarChange}
+                                className="avatar-file-input"
+                              />
                             </div>
-                            <Form.Control
-                              type="file"
-                              name="avatar" 
-                              accept="image/*"
-                              ref={fileInputRef}
-                              onChange={handleAvatarChange}
-                              style={{ display: 'none' }}
-                            />
+                            
+                            {/* Modern Action Buttons */}
+                            <div className="avatar-action-buttons d-flex gap-2 flex-wrap justify-content-center">
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="avatar-action-button d-flex align-items-center gap-1 rounded-pill px-3 py-2"
+                                onClick={handleAvatarClick}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+                                </svg>
+                                {(avatarBlobUrl || formData.avatarUrl) && !deleteAvatar ? 'Change' : 'Upload'}
+                              </Button>
+
+                              {((avatarBlobUrl || formData.avatarUrl) && !deleteAvatar) && (
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  className="avatar-action-button d-flex align-items-center gap-1 rounded-pill px-3 py-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteAvatar()
+                                  }}
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                  </svg>
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </Col>
                         <Col>
