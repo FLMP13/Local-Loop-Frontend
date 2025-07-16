@@ -1068,3 +1068,42 @@ code.bg-white {
     margin-bottom: 1rem;
   }
 }
+
+/* Header Logo Styles */
+
+.transparent-brand-button {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  transition: all 0.3s ease;
+}
+
+.transparent-brand-button:hover,
+.transparent-brand-button:focus,
+.transparent-brand-button:active {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.logo-image {
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.logo-image:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+}
+
+/* Override Bootstrap navbar-brand styles */
+.navbar-brand {
+  margin-right: 1rem !important;
+}
+
+.navbar-brand:hover,
+.navbar-brand:focus {
+  color: inherit !important;
+  text-decoration: none !important;
+}
