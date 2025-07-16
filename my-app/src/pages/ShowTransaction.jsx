@@ -647,10 +647,11 @@ export default function ShowTransaction() {
                   {(() => {
                     if (!transaction.totalAmount || !transaction.deposit) return null;
                     
-                    // Use premium pricing fields if available
-                    const lendingFee = transaction.finalLendingFee || (transaction.totalAmount - transaction.deposit);
-                    const platformFee = lendingFee * 0.05;
-                    const lenderPayment = lendingFee * 0.95;
+                    // Calculate payments - lender gets 95% of original fee (before discounts)
+                    const finalLendingFee = transaction.finalLendingFee || (transaction.totalAmount - transaction.deposit);
+                    const originalLendingFee = transaction.originalLendingFee || finalLendingFee;
+                    const platformFee = finalLendingFee * 0.05;
+                    const lenderPayment = originalLendingFee * 0.95;
                     
                     return (
                       <>
@@ -662,18 +663,18 @@ export default function ShowTransaction() {
                             <br />
                             • Premium discount ({transaction.discountRate}%): <span className="text-success">-€{transaction.discountApplied.toFixed(2)}</span>
                             <br />
-                            • Final lending fee: <span className="fw-bold">€{lendingFee.toFixed(2)}</span>
+                            • Final lending fee: <span className="fw-bold">€{finalLendingFee.toFixed(2)}</span>
                             <br />
                           </>
                         ) : (
                           <>
-                            • Lending fee: €{lendingFee.toFixed(2)}
+                            • Lending fee: €{finalLendingFee.toFixed(2)}
                             <br />
                           </>
                         )}
-                        • Your share (95%): €{lenderPayment.toFixed(2)} transferred to PayPal
+                        • Your share (95% of original fee): €{lenderPayment.toFixed(2)} transferred to PayPal
                         <br />
-                        • Platform fee (5%): €{platformFee.toFixed(2)}
+                        • Platform fee (5% of final fee): €{platformFee.toFixed(2)}
                         <br />
                         <em className="text-muted">Deposit (€{transaction.deposit.toFixed(2)}) held until return & inspection.</em>
                       </>
