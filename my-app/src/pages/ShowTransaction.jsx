@@ -92,10 +92,6 @@ export default function ShowTransaction() {
   const [showDamageModal, setShowDamageModal] = useState(false);
   const [damageDescription, setDamageDescription] = useState('');
 
-  // Debug: Log showPaymentSuccess state changes
-  useEffect(() => {
-    console.log('showPaymentSuccess state changed:', showPaymentSuccess);
-  }, [showPaymentSuccess]);
   const [depositRefundPercentage, setDepositRefundPercentage] = useState(100);
   const [damageError, setDamageError] = useState('');
   const [showImageModal, setShowImageModal] = useState(false);
@@ -133,7 +129,7 @@ export default function ShowTransaction() {
           setCanReview(data);
         }
       } catch (err) {
-        console.error('Failed to check review status');
+        // Failed to check review status - silently handle
       }
     };
 
@@ -148,6 +144,20 @@ export default function ShowTransaction() {
     if (params.get('showReturn') === '1') setShowReturnModal(true);
   }, [location.search]);
 
+  // Utility function to refetch transaction data
+  const refetchTransaction = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/transactions/${transaction._id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setTransaction(data);
+      return data;
+    }
+    throw new Error('Failed to refetch transaction');
+  };
+
   const handleAction = async (action) => {
     setUpdating(true);
     try {
@@ -158,11 +168,7 @@ export default function ShowTransaction() {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Refetch transaction data
-      const res = await fetch(`/api/transactions/${transaction._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setTransaction(data);
+      await refetchTransaction();
     } catch (err) {
       setError(err.message || 'An error occurred while updating the transaction.');
       setShowError(true);
@@ -180,11 +186,7 @@ export default function ShowTransaction() {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Refetch transaction data
-      const res = await fetch(`/api/transactions/${transaction._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setTransaction(data);
+      await refetchTransaction();
     } catch (err) {
       setError(err.message || 'Failed to complete transaction.');
       setShowError(true);
@@ -216,11 +218,7 @@ export default function ShowTransaction() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       // Refetch transaction data to update UI
-      const res = await fetch(`/api/transactions/${transaction._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setTransaction(data);
+      await refetchTransaction();
       setShowRenegotiateForm(null);
       setRenegotiateRange(undefined);
       setError('');
@@ -243,11 +241,7 @@ export default function ShowTransaction() {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Refetch transaction data to update UI
-      const res = await fetch(`/api/transactions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setTransaction(data);
+      await refetchTransaction();
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -266,11 +260,7 @@ export default function ShowTransaction() {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Refetch transaction data to update UI
-      const res = await fetch(`/api/transactions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setTransaction(data);
+      await refetchTransaction();
     } catch (err) {
       setError(
         err.response?.data?.error ||
@@ -334,21 +324,11 @@ export default function ShowTransaction() {
         if (data.depositDistribution) {
           setDepositRefundInfo(data.depositDistribution);
           setShowRefundSuccess(true);
-          // Hide success message after 10 seconds
-          setTimeout(() => setShowRefundSuccess(false), 10000);
         }
         
         // Show inspection message for borrower
         if (user?.id === transaction.borrower?._id) {
           setShowInspectionMessage(true);
-          // Hide inspection message after 8 seconds and then show review modal
-          setTimeout(() => {
-            setShowInspectionMessage(false);
-            // Show review modal after inspection message disappears
-            setTimeout(() => {
-              setShowReviewModal(true);
-            }, 500);
-          }, 8000);
         } else {
           // Normal case - no notification needed since both parties are present during normal flow
         }
@@ -372,18 +352,16 @@ export default function ShowTransaction() {
             // Update counters since transaction status changed
             fetchCounts();
             
-            // Review modal timing is now handled in the inspection message logic above
+            // Review modal timing is now handled manually - no auto-show
             // Only show review modal immediately if user is NOT the borrower
             if (user?.id !== transaction.borrower?._id) {
-              setTimeout(() => {
-                setShowReviewModal(true);
-              }, 500);
+              // Show review modal for lender immediately
+              setShowReviewModal(true);
             }
           } else {
             setReturnError('Failed to load updated transaction data');
           }
         } catch (refetchErr) {
-          console.error('Failed to refetch transaction:', refetchErr);
           setReturnError('Failed to load updated transaction data');
         }
       } else {
@@ -431,12 +409,10 @@ export default function ShowTransaction() {
   };
 
   const handlePickupCodeSubmit = async () => {
-    console.log('handlePickupCodeSubmit called with code:', pickupCodeInput);
     setPickupError('');
     setUpdating(true);
     try {
       const token = localStorage.getItem('token');
-      console.log('Making API call to pickup-code endpoint');
       const res = await fetch(`/api/transactions/${transaction._id}/pickup-code`, {
         method: 'POST',
         headers: {
@@ -446,10 +422,8 @@ export default function ShowTransaction() {
         body: JSON.stringify({ code: pickupCodeInput })
       });
       const data = await res.json();
-      console.log('API Response:', { status: res.status, ok: res.ok, data });
       
       if (res.ok) {
-        console.log('API call successful, updating transaction');
         // Update transaction with the returned transaction object
         setTransaction(data);
         setShowPickupModal(false);
@@ -457,12 +431,8 @@ export default function ShowTransaction() {
         
         // Show payment success popup for lender (who enters the code)
         // The lender receives payment when borrower's pickup code is confirmed
-        console.log('Setting payment success message to true');
         setShowPaymentSuccess(true);
-        setTimeout(() => {
-          console.log('Hiding payment success message');
-          setShowPaymentSuccess(false);
-        }, 8000);
+        // Message will stay visible until user manually dismisses it
         
         // If this is a different user session (borrower not present), save notification for lender
         // The payment success is already shown for current lender, but if lender logs in later, they should see it
@@ -472,11 +442,9 @@ export default function ShowTransaction() {
         // Update counters since transaction status changed
         fetchCounts();
       } else {
-        console.log('API call failed:', data.error);
         setPickupError(data.error || 'Invalid code');
       }
     } catch (err) {
-      console.error('Error in handlePickupCodeSubmit:', err);
       setPickupError('Failed to submit code');
     }
     setUpdating(false);
@@ -499,11 +467,9 @@ export default function ShowTransaction() {
         
         // Show confirmation message for lender
         setShowDepositMessage(true);
-        setTimeout(() => setShowDepositMessage(false), 8000);
         
         // Show notification for borrower (will be visible when borrower views the page)
         setShowBorrowerNotification(true);
-        setTimeout(() => setShowBorrowerNotification(false), 12000);
         
         // Refresh transaction
         const refetchRes = await fetch(`/api/transactions/${transaction._id}`, {
@@ -547,11 +513,9 @@ export default function ShowTransaction() {
         
         // Show confirmation message for lender
         setShowDepositMessage(true);
-        setTimeout(() => setShowDepositMessage(false), 8000);
         
         // Show notification for borrower (will be visible when borrower views the page)
         setShowBorrowerNotification(true);
-        setTimeout(() => setShowBorrowerNotification(false), 12000);
         
         // Close modal and reset form
         setShowDamageModal(false);
@@ -656,9 +620,7 @@ export default function ShowTransaction() {
 
       {/* Payment Success Message for Lender */}
       {showPaymentSuccess && (
-        <>
-          {console.log('Rendering Payment Success Alert')}
-          <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowPaymentSuccess(false)}>
+        <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowPaymentSuccess(false)}>
             <div className="me-3" style={{ fontSize: '1.5rem' }}>💰</div>
             <div className="flex-grow-1">
               <Alert.Heading className="h6 mb-2">Payment Received!</Alert.Heading>
@@ -667,19 +629,35 @@ export default function ShowTransaction() {
                 <div className="text-success mt-1">
                   {(() => {
                     if (!transaction.totalAmount || !transaction.deposit) return null;
-                    const lendingFee = transaction.totalAmount - transaction.deposit;
-                    const platformFee = lendingFee * 0.05;
-                    const lenderPayment = lendingFee * 0.95;
+                    
+                    // Calculate payments - lender gets 95% of original fee (before discounts)
+                    const finalLendingFee = transaction.finalLendingFee || (transaction.totalAmount - transaction.deposit);
+                    const originalLendingFee = transaction.originalLendingFee || finalLendingFee;
+                    const platformFee = finalLendingFee * 0.05;
+                    const lenderPayment = originalLendingFee * 0.95;
                     
                     return (
                       <>
                         <strong>Payment breakdown:</strong>
                         <br />
-                        • Lending fee: €{lendingFee.toFixed(2)}
+                        {transaction.isPremiumTransaction && transaction.originalLendingFee && transaction.discountApplied ? (
+                          <>
+                            • Original lending fee: <span className="text-decoration-line-through">€{transaction.originalLendingFee.toFixed(2)}</span>
+                            <br />
+                            • Premium discount ({transaction.discountRate}%): <span className="text-success">-€{transaction.discountApplied.toFixed(2)}</span>
+                            <br />
+                            • Final lending fee: <span className="fw-bold">€{finalLendingFee.toFixed(2)}</span>
+                            <br />
+                          </>
+                        ) : (
+                          <>
+                            • Lending fee: €{finalLendingFee.toFixed(2)}
+                            <br />
+                          </>
+                        )}
+                        • Your share (95% of original fee): €{lenderPayment.toFixed(2)} transferred to PayPal
                         <br />
-                        • Your share (95%): €{lenderPayment.toFixed(2)} transferred to PayPal
-                        <br />
-                        • Platform fee (5%): €{platformFee.toFixed(2)}
+                        • Platform fee (5% of final fee): €{platformFee.toFixed(2)}
                         <br />
                         <em className="text-muted">Deposit (€{transaction.deposit.toFixed(2)}) held until return & inspection.</em>
                       </>
@@ -689,7 +667,6 @@ export default function ShowTransaction() {
               </div>
             </div>
           </Alert>
-        </>
       )}
 
       {/* Deposit Processing Message for Lender */}
@@ -790,16 +767,26 @@ export default function ShowTransaction() {
                 <>
                   <strong>The lender confirmed no damage to the item after inspection.</strong>
                   <div className="text-success mt-1">
-                    Your full deposit was refunded to your PayPal account.
+                    Your full deposit of <strong>€{(transaction.deposit || 0).toFixed(2)}</strong> was refunded to your PayPal account.
                   </div>
                 </>
               ) : (
                 <>
                   <strong>The lender reported damage to the item after inspection.</strong>
                   <div className="text-muted mt-1">
-                    You received {transaction.depositRefundPercentage}% of your deposit as refund.
-                    <br />
-                    {(100 - transaction.depositRefundPercentage)}% was retained as damage compensation.
+                    {(() => {
+                      const depositAmount = transaction.deposit || 0;
+                      const refundAmount = (depositAmount * (transaction.depositRefundPercentage || 0)) / 100;
+                      const retainedAmount = depositAmount - refundAmount;
+                      
+                      return (
+                        <>
+                          You received <strong>€{refundAmount.toFixed(2)}</strong> ({transaction.depositRefundPercentage}% of €{depositAmount.toFixed(2)} deposit) as refund.
+                          <br />
+                          <strong>€{retainedAmount.toFixed(2)}</strong> ({(100 - transaction.depositRefundPercentage)}% of deposit) was retained as damage compensation.
+                        </>
+                      );
+                    })()}
                   </div>
                   {transaction.damageDescription && (
                     <div className="text-warning mt-2">
@@ -1285,7 +1272,7 @@ export default function ShowTransaction() {
                                 </div>
                                 {depositRefundInfo.depositRefundPercentage < 100 && (
                                   <div className="text-warning small mt-1">
-                                    ⚠️ {100 - depositRefundInfo.depositRefundPercentage}% of deposit deducted for damage compensation
+                                    ⚠️ €{depositRefundInfo.toLender?.toFixed(2)} ({100 - depositRefundInfo.depositRefundPercentage}% of deposit) deducted for damage compensation
                                   </div>
                                 )}
                               </div>
@@ -1297,6 +1284,49 @@ export default function ShowTransaction() {
                         </div>
                       )}
                     </div>
+                    
+                    {/* Pricing Information */}
+                    {(transaction.finalLendingFee || transaction.originalLendingFee || transaction.totalAmount) && (
+                      <div className="border-start border-3 ps-3" style={{ borderColor: 'var(--brand) !important' }}>
+                        <small className="text-muted text-uppercase fw-semibold">Pricing Details</small>
+                        <div className="mt-2">
+                          {transaction.isPremiumTransaction && transaction.originalLendingFee && transaction.finalLendingFee && (
+                            <>
+                              <div className="d-flex justify-content-between align-items-center mb-1">
+                                <span className="text-muted">Original Price:</span>
+                                <span className="text-decoration-line-through text-muted">€{transaction.originalLendingFee.toFixed(2)}</span>
+                              </div>
+                              <div className="d-flex justify-content-between align-items-center mb-1">
+                                <span className="text-success fw-semibold">Premium Discount ({transaction.discountRate}%):</span>
+                                <span className="text-success fw-semibold">-€{transaction.discountApplied.toFixed(2)}</span>
+                              </div>
+                              <div className="d-flex justify-content-between align-items-center mb-2">
+                                <span className="fw-bold">Final Lending Fee:</span>
+                                <span className="fw-bold text-success">€{transaction.finalLendingFee.toFixed(2)}</span>
+                              </div>
+                            </>
+                          )}
+                          {!transaction.isPremiumTransaction && (transaction.finalLendingFee || transaction.totalAmount) && (
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="fw-bold">Lending Fee:</span>
+                              <span className="fw-bold">€{(transaction.finalLendingFee || transaction.totalAmount - transaction.deposit || 0).toFixed(2)}</span>
+                            </div>
+                          )}
+                          {transaction.deposit && (
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="text-muted">Security Deposit:</span>
+                              <span className="text-muted">€{transaction.deposit.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {transaction.totalAmount && (
+                            <div className="d-flex justify-content-between align-items-center pt-2 border-top">
+                              <span className="fw-bold">Total Paid:</span>
+                              <span className="fw-bold">€{transaction.totalAmount.toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Col>
 

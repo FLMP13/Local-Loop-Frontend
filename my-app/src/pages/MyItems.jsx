@@ -1,5 +1,5 @@
 // List all items in the database in a list format in the frontend application
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -10,10 +10,19 @@ import Alert from 'react-bootstrap/Alert';
 import Spinner from 'react-bootstrap/Spinner';
 import { AuthContext } from '../context/AuthContext'; // Adjust the path if needed
 import { useMyItems } from '../hooks/useMyItems';
+import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
+import { usePremium } from '../hooks/usePremium';
 
 export default function MyItems({ statusFilter, title = "My Items" }) {
     const { user } = useContext(AuthContext);
+    const { isPremium } = usePremium();
     const { items, error, loading } = useMyItems(statusFilter);
+    const [showModal, setShowModal] = useState(false);
+    
+    // Rotate between different upgrade prompts
+    const [promptType, setPromptType] = useState(() => 
+        Math.random() > 0.5 ? 'priority' : 'analytics'
+    );
 
     if (!user) {
         return (
@@ -55,6 +64,27 @@ export default function MyItems({ statusFilter, title = "My Items" }) {
     return (
         <Container fluid className="py-5 px-4">
             <h2 className="text-center mb-5">My Items</h2>
+            
+            {user && !isPremium && items.length > 0 && (
+                <Alert variant={promptType === 'priority' ? 'warning' : 'info'} className="mb-4">
+                    <div className="d-flex justify-content-between align-items-center">
+                        <span>
+                            {promptType === 'priority' ? (
+                                <>⭐ <strong>Get Priority Visibility!</strong> Premium listings appear first in search results.</>
+                            ) : (
+                                <>📊 <strong>Want Analytics?</strong> See detailed view statistics for all your items with Premium!</>
+                            )}
+                        </span>
+                        <Button 
+                            variant="warning" 
+                            size="sm"
+                            onClick={() => setShowModal(true)}
+                        >
+                            Upgrade Now
+                        </Button>
+                    </div>
+                </Alert>
+            )}
             {error && <Alert variant="danger">{error}</Alert>}
             {loading ? (
                 <div className="text-center my-5">
@@ -103,17 +133,40 @@ export default function MyItems({ statusFilter, title = "My Items" }) {
                                 </Card.Text>
                                 <Card.Text>
                                     <strong>Owner:</strong>{' '}
-                                    {item.owner
-                                        ? (item.owner.nickname
-                                            || `${item.owner.firstName} ${item.owner.lastName}`)
-                                        : 'Unknown'}
+                                    {user?.nickname || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You'}
                                 </Card.Text>
                                 <Card.Text className="flex-grow-1">
                                     {item.description}
                                 </Card.Text>
-                                <Card.Text className="fw-bold mb-3">
+                                <Card.Text className="fw-bold mb-2">
                                     €{item.price.toFixed(2)}/week
                                 </Card.Text>
+                                
+                                {/* Premium Analytics */}
+                                {item.isPremiumAnalytics ? (
+                                    <Card.Text className="small text-muted mb-3">
+                                        <i className="bi bi-eye me-1"></i>
+                                        <span className="fw-semibold">{item.viewCount || 0}</span> views
+                                        <span className="badge bg-success ms-2 px-2 py-1">
+                                            <i className="bi bi-star-fill me-1" style={{fontSize: '0.7rem'}}></i>
+                                            Premium Analytics
+                                        </span>
+                                    </Card.Text>
+                                ) : (
+                                    <Card.Text className="small text-muted mb-3">
+                                        <i className="bi bi-eye-slash me-1"></i>
+                                        <span className="text-muted">Analytics available with</span>
+                                        <Button 
+                                            as={Link} 
+                                            to="/profile" 
+                                            variant="link" 
+                                            size="sm" 
+                                            className="p-0 ms-1 text-decoration-none"
+                                        >
+                                            Premium
+                                        </Button>
+                                    </Card.Text>
+                                )}
                                 <Button
                                     as={Link}
                                     to={`/items/${item._id}`}
@@ -128,6 +181,12 @@ export default function MyItems({ statusFilter, title = "My Items" }) {
                 ))}
               </Row>
             )}
+            
+            <PremiumUpgradeModal 
+                show={showModal} 
+                onHide={() => setShowModal(false)}
+                context={promptType === 'priority' ? 'priority-listing' : 'analytics'}
+            />
         </Container>
     );
 }
