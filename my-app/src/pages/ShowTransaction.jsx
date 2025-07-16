@@ -324,21 +324,11 @@ export default function ShowTransaction() {
         if (data.depositDistribution) {
           setDepositRefundInfo(data.depositDistribution);
           setShowRefundSuccess(true);
-          // Hide success message after 10 seconds
-          setTimeout(() => setShowRefundSuccess(false), 10000);
         }
         
         // Show inspection message for borrower
         if (user?.id === transaction.borrower?._id) {
           setShowInspectionMessage(true);
-          // Hide inspection message after 8 seconds and then show review modal
-          setTimeout(() => {
-            setShowInspectionMessage(false);
-            // Show review modal after inspection message disappears
-            setTimeout(() => {
-              setShowReviewModal(true);
-            }, 500);
-          }, 8000);
         } else {
           // Normal case - no notification needed since both parties are present during normal flow
         }
@@ -362,12 +352,11 @@ export default function ShowTransaction() {
             // Update counters since transaction status changed
             fetchCounts();
             
-            // Review modal timing is now handled in the inspection message logic above
+            // Review modal timing is now handled manually - no auto-show
             // Only show review modal immediately if user is NOT the borrower
             if (user?.id !== transaction.borrower?._id) {
-              setTimeout(() => {
-                setShowReviewModal(true);
-              }, 500);
+              // Show review modal for lender immediately
+              setShowReviewModal(true);
             }
           } else {
             setReturnError('Failed to load updated transaction data');
@@ -478,11 +467,9 @@ export default function ShowTransaction() {
         
         // Show confirmation message for lender
         setShowDepositMessage(true);
-        setTimeout(() => setShowDepositMessage(false), 8000);
         
         // Show notification for borrower (will be visible when borrower views the page)
         setShowBorrowerNotification(true);
-        setTimeout(() => setShowBorrowerNotification(false), 12000);
         
         // Refresh transaction
         const refetchRes = await fetch(`/api/transactions/${transaction._id}`, {
@@ -526,11 +513,9 @@ export default function ShowTransaction() {
         
         // Show confirmation message for lender
         setShowDepositMessage(true);
-        setTimeout(() => setShowDepositMessage(false), 8000);
         
         // Show notification for borrower (will be visible when borrower views the page)
         setShowBorrowerNotification(true);
-        setTimeout(() => setShowBorrowerNotification(false), 12000);
         
         // Close modal and reset form
         setShowDamageModal(false);
