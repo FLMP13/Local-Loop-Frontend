@@ -8,6 +8,7 @@ import Card from 'react-bootstrap/Card';
 import Button from 'react-bootstrap/Button';
 import Alert from 'react-bootstrap/Alert';
 import Spinner from 'react-bootstrap/Spinner';
+import { Star } from 'react-bootstrap-icons';
 import { AuthContext } from '../context/AuthContext'; // Adjust the path if needed
 import { useMyItems } from '../hooks/useMyItems';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
@@ -70,9 +71,9 @@ export default function MyItems({ statusFilter, title = "My Items" }) {
                     <div className="d-flex justify-content-between align-items-center">
                         <span>
                             {promptType === 'priority' ? (
-                                <>⭐ <strong>Get Priority Visibility!</strong> Premium listings appear first in search results.</>
+                                <><Star className="me-1" /><strong>Get Priority Visibility!</strong> Premium listings appear first in search results.</>
                             ) : (
-                                <>📊 <strong>Want Analytics?</strong> See detailed view statistics for all your items with Premium!</>
+                                <><Star className="me-1" /><strong>Want Analytics?</strong> See detailed view statistics for all your items with Premium!</>
                             )}
                         </span>
                         <Button 

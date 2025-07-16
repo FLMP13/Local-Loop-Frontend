@@ -3,6 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { Container, Card, Alert, Tabs, Tab, Image } from 'react-bootstrap';
 import axios from 'axios';
 import RatingDisplay from '../components/RatingDisplay';
+import { ExclamationTriangle } from 'react-bootstrap-icons';
 
 export default function UserReviews() {
   const { userId } = useParams();
@@ -190,7 +191,7 @@ export default function UserReviews() {
       {error && (
         <Alert variant="danger" className="rounded-pill mb-4 mx-auto" style={{ maxWidth: '800px' }}>
           <div className="d-flex align-items-center">
-            <span className="me-2">⚠️</span>
+            <ExclamationTriangle className="me-2" />
             {error}
           </div>
         </Alert>

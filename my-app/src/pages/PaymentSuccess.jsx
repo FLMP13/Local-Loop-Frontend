@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Container, Card, Alert, Spinner } from "react-bootstrap";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
+import { CheckCircle, ShieldCheck, CurrencyDollar, Phone, ArrowRight } from 'react-bootstrap-icons';
 
 export default function PaymentSuccess() {
   const { transactionId } = useParams();
@@ -35,15 +36,18 @@ export default function PaymentSuccess() {
   return (
     <Container className="mt-5 d-flex justify-content-center">
       <Card style={{ maxWidth: "500px", padding: "2rem", textAlign: "center" }}>
-        <h2 className="text-success mb-3">✅ Payment Successful!</h2>
+        <h2 className="text-success mb-3">
+          <CheckCircle className="me-2" />
+          Payment Successful!
+        </h2>
         <p>Your payment for <strong>{transaction.itemTitle}</strong> has been completed successfully.</p>
         
         <div className="alert alert-info my-3">
           <strong>What happens next?</strong>
           <ul className="list-unstyled mt-2 mb-0">
-            <li>🔐 A pickup code has been generated for you</li>
-            <li>💰 The lender will receive their payment when you pick up the item</li>
-            <li>📱 Give the pickup code to the lender when collecting the item</li>
+            <li><ShieldCheck className="me-2" />A pickup code has been generated for you</li>
+            <li><CurrencyDollar className="me-2" />The lender will receive their payment when you pick up the item</li>
+            <li><Phone className="me-2" />Give the pickup code to the lender when collecting the item</li>
           </ul>
         </div>
 
@@ -52,7 +56,7 @@ export default function PaymentSuccess() {
           <strong>Total Amount:</strong> €{transaction.totalAmount}
         </p>
         <Link to={`/transactions/${transactionId}`} className="btn btn-primary mt-3">
-          ➜ View Pickup Code & Details
+          <ArrowRight className="me-2" /> View Pickup Code & Details
         </Link>
       </Card>
     </Container>

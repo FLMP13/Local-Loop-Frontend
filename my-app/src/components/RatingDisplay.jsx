@@ -1,4 +1,5 @@
 import React from 'react';
+import { StarFill, Star } from 'react-bootstrap-icons';
 
 export default function RatingDisplay({ rating, count, size = 'sm' }) {
   if (count === 0) {
@@ -11,17 +12,17 @@ export default function RatingDisplay({ rating, count, size = 'sm' }) {
 
   for (let i = 0; i < 5; i++) {
     if (i < fullStars) {
-      stars.push('⭐');
+      stars.push(<StarFill key={i} style={{ color: '#ffc107' }} />);
     } else if (i === fullStars && hasHalfStar) {
-      stars.push('⭐');
+      stars.push(<StarFill key={i} style={{ color: '#ffc107' }} />);
     } else {
-      stars.push('☆');
+      stars.push(<Star key={i} style={{ color: '#dee2e6' }} />);
     }
   }
 
   return (
     <span className={`rating-display ${size === 'lg' ? 'fs-5' : ''}`}>
-      {stars.join('')} {rating.toFixed(1)} ({count} review{count !== 1 ? 's' : ''})
+      {stars} {rating.toFixed(1)} ({count} review{count !== 1 ? 's' : ''})
     </span>
   );
 }

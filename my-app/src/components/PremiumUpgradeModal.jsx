@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {Modal, Button, Card, Row, Col, Badge, Alert} from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { CurrencyDollar, Rocket, Star } from 'react-bootstrap-icons';
 
 
 export default function PremiumUpgradeModal({ show, onHide, currentListings, maxListings, context = 'limit' }) {
@@ -58,25 +59,25 @@ export default function PremiumUpgradeModal({ show, onHide, currentListings, max
           </Alert>
         ) : context === 'discount' ? (
           <Alert variant="success" className="mb-4">
-            <strong>💰 Save 10% on Every Rental!</strong>
+            <strong><CurrencyDollar className="me-1" />Save 10% on Every Rental!</strong>
             <br />
             Premium users get an automatic 10% discount on all rentals. Start saving today!
           </Alert>
         ) : context === 'priority' ? (
           <Alert variant="info" className="mb-4">
-            <strong>🚀 Get Priority Access!</strong>
+            <strong><Rocket className="me-1" />Get Priority Access!</strong>
             <br />
             Premium users' requests are prioritized by lenders. Get your rentals faster!
           </Alert>
         ) : context === 'analytics' ? (
           <Alert variant="primary" className="mb-4">
-            <strong>📊 Unlock Item Analytics!</strong>
+            <strong>Unlock Item Analytics!</strong>
             <br />
             See detailed view statistics, track popularity, and optimize your listings!
           </Alert>
         ) : context === 'priority-listing' ? (
           <Alert variant="warning" className="mb-4">
-            <strong>⭐ Get Priority Visibility!</strong>
+            <strong><Star className="me-1" style={{ color: '#ffc107' }} />Get Priority Visibility!</strong>
             <br />
             Premium listings appear first in search results. Get more views and bookings!
           </Alert>

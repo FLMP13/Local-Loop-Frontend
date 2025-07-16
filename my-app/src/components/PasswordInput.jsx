@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Form, InputGroup, Button } from 'react-bootstrap';
+import { Eye, EyeSlash } from 'react-bootstrap-icons';
 
 const PasswordInput = ({ 
   name, 
@@ -53,7 +54,7 @@ const PasswordInput = ({
         type="button"
       >
         <span style={{ fontSize: '1rem' }}>
-          {showPassword ? '🐵' : '🙈'}
+          {showPassword ? <EyeSlash /> : <Eye />}
         </span>
       </Button>
     </InputGroup>

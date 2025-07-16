@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Toast, ToastContainer } from 'react-bootstrap';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import { CheckCircle } from 'react-bootstrap-icons';
 
 export default function RenewalNotification() {
   const { token, user } = useContext(AuthContext);
@@ -55,7 +56,7 @@ export default function RenewalNotification() {
       >
         <Toast.Header className="bg-success text-white">
           <i className="bi bi-check-circle-fill me-2"></i>
-          <strong className="me-auto">🎉 Auto-Renewal Success</strong>
+          <strong className="me-auto"><CheckCircle className="me-1" />Auto-Renewal Success</strong>
         </Toast.Header>
         <Toast.Body>
           <div className="mb-2">

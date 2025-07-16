@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
+import { StarFill } from 'react-bootstrap-icons';
 
 export default function ReviewModal({ show, onHide, transaction, userRole, onReviewSubmitted }) {
   const [rating, setRating] = useState(5);
@@ -68,11 +69,11 @@ export default function ReviewModal({ show, onHide, transaction, userRole, onRev
               onChange={(e) => setRating(parseInt(e.target.value))}
               required
             >
-              <option value={5}>⭐⭐⭐⭐⭐ Excellent</option>
-              <option value={4}>⭐⭐⭐⭐ Good</option>
-              <option value={3}>⭐⭐⭐ Average</option>
-              <option value={2}>⭐⭐ Poor</option>
-              <option value={1}>⭐ Very Poor</option>
+              <option value={5}>★★★★★ Excellent</option>
+              <option value={4}>★★★★ Good</option>
+              <option value={3}>★★★ Average</option>
+              <option value={2}>★★ Poor</option>
+              <option value={1}>★ Very Poor</option>
             </Form.Select>
           </Form.Group>
 

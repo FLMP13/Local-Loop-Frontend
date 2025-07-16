@@ -217,7 +217,7 @@ export default function CreateProfile() {
                 name="password"
                 value={form.password}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 minLength={6}
                 required
               />

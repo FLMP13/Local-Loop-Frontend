@@ -9,6 +9,7 @@ import { AuthContext } from '../context/AuthContext.jsx'
 import Spinner from 'react-bootstrap/Spinner'
 import { FiSearch, FiMapPin } from 'react-icons/fi'     // search + pin icon
 import RatingDisplay from '../components/RatingDisplay';
+import { Award } from 'react-bootstrap-icons';
 
 const categories = [
   '', 'Electronics','Furniture','Clothing',
@@ -234,7 +235,7 @@ export default function Home() {
                             border: '1px solid #ddd',
                             padding: '0.4rem 0.6rem'
                           }}>
-                            👑
+                            <Award style={{ color: '#ffc107' }} />
                           </span>
                         )}
                       </div>

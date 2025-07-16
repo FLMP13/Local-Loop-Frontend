@@ -8,6 +8,7 @@ import Col from 'react-bootstrap/Col';
 import Alert from 'react-bootstrap/Alert';
 import Image from 'react-bootstrap/Image';
 import Card from 'react-bootstrap/Card';
+import { ExclamationTriangle, Rocket, X } from 'react-bootstrap-icons';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { useAddItem } from '../hooks/useAddItem';
@@ -109,7 +110,7 @@ export default function AddItem() {
                             {error && (
                                 <Alert variant="danger" className="rounded-pill mb-4">
                                     <div className="d-flex align-items-center">
-                                        <span className="me-2">⚠️</span>
+                                        <ExclamationTriangle className="me-2" />
                                         {error}
                                     </div>
                                 </Alert>
@@ -261,7 +262,7 @@ export default function AddItem() {
                                                                 onClick={() => handleImageRemove(idx)}
                                                                 title="Remove image"
                                                             >
-                                                                ×
+                                                                <X />
                                                             </Button>
                                                         </div>
                                                     ))}
@@ -300,7 +301,8 @@ export default function AddItem() {
                                         className="rounded-pill py-3"
                                         style={{ fontSize: '1.1rem', fontWeight: '600' }}
                                     >
-                                        🚀 Add Item to Community
+                                        <Rocket className="me-2" />
+                                        Add Item to Community
                                     </Button>
                                     <Button 
                                         as={Link}

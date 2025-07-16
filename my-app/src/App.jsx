@@ -11,6 +11,7 @@ import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import NavDropdown from 'react-bootstrap/NavDropdown';
 import Alert from 'react-bootstrap/Alert';
+import { CurrencyDollar, ExclamationTriangle } from 'react-bootstrap-icons';
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import CreateProfile from './pages/CreateProfile.jsx'
@@ -301,7 +302,7 @@ export default function App() {
               className="d-flex align-items-center mb-4"
             >
               <div className="me-3" style={{ fontSize: '1.5rem' }}>
-                {tempNotification.variant === 'success' ? '💰' : '�'}
+                {tempNotification.variant === 'success' ? <CurrencyDollar /> : <ExclamationTriangle />}
               </div>
               <div className="flex-grow-1">
                 <Alert.Heading className="h6 mb-2">{tempNotification.title}</Alert.Heading>

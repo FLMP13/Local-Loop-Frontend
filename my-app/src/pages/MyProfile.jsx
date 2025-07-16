@@ -8,6 +8,16 @@ import RatingDisplay from '../components/RatingDisplay'
 import PasswordInput from '../components/PasswordInput'
 import { usePremium } from '../hooks/usePremium'
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal'
+import { 
+  ExclamationTriangle, 
+  CheckSquare, 
+  ChatLeftText, 
+  ShieldLock,
+  CheckCircle,
+  House,
+  Award,
+  Rocket
+} from 'react-bootstrap-icons';
 
 // Profile picture persistence implemented with authenticated blob fetching
 
@@ -324,7 +334,7 @@ export default function MyProfile() {
               className="rounded-pill px-4"
               onClick={handleLogout}
             >
-              🚪 Log Out
+              Log Out
             </Button>
           </div>
         </div>
@@ -334,7 +344,7 @@ export default function MyProfile() {
       {error && (
         <Alert variant="danger" className="rounded-pill mb-4 mx-auto" style={{ maxWidth: '800px' }}>
           <div className="d-flex align-items-center">
-            <span className="me-2">⚠️</span>
+            <ExclamationTriangle className="me-2" />
             {error}
           </div>
         </Alert>
@@ -342,7 +352,7 @@ export default function MyProfile() {
       {success && (
         <Alert variant="success" className="rounded-pill mb-4 mx-auto" style={{ maxWidth: '800px' }}>
           <div className="d-flex align-items-center">
-            <span className="me-2">✅</span>
+            <CheckSquare className="me-2" />
             {success}
           </div>
         </Alert>
@@ -549,7 +559,7 @@ export default function MyProfile() {
                         className="rounded-pill py-3"
                         style={{ fontSize: '1.1rem', fontWeight: '600' }}
                       >
-                        💾 Save Profile Changes
+                        Save Profile Changes
                       </Button>
                     </div>
                   </Form>
@@ -571,14 +581,15 @@ export default function MyProfile() {
                         size="sm"
                         className="rounded-pill px-3"
                       >
-                        📝 Reviews
+                        <ChatLeftText className="me-1" />
+                        Reviews
                       </Button>
                     )}
                   </div>
                   
                   <div className="mb-4">
                     <div className="d-flex align-items-center mb-2">
-                      <span className="me-2" style={{ fontSize: '1.2rem' }}>🏠</span>
+                      <House className="me-2" style={{ fontSize: '1.2rem' }} />
                       <span className="fw-semibold">As Lender</span>
                     </div>
                     <RatingDisplay 
@@ -593,7 +604,6 @@ export default function MyProfile() {
                   
                   <div>
                     <div className="d-flex align-items-center mb-2">
-                      <span className="me-2" style={{ fontSize: '1.2rem' }}>🤝</span>
                       <span className="fw-semibold">As Borrower</span>
                     </div>
                     <RatingDisplay 
@@ -615,7 +625,7 @@ export default function MyProfile() {
             <Card.Body className="p-4 p-md-5">
               <div className="d-flex align-items-center justify-content-between mb-4">
                 <div className="d-flex align-items-center">
-                  <span className="me-3" style={{ fontSize: '1.5rem' }}>👑</span>
+                  <Award className="me-3" style={{ fontSize: '1.5rem', color: '#ffc107' }} />
                   <h4 className="fw-bold mb-0">Premium Status</h4>
                 </div>
                 {isPremium && (
@@ -720,7 +730,7 @@ export default function MyProfile() {
                     className="rounded-pill px-4"
                     onClick={() => setShowUpgradeModal(true)}
                   >
-                    <span className="me-2">👑</span>
+                    <Award className="me-2" style={{ color: '#ffc107' }} />
                     Upgrade to Premium
                   </Button>
                 ) : subscription?.status === 'cancelled' ? (
@@ -731,7 +741,6 @@ export default function MyProfile() {
                       className="rounded-pill px-4"
                       onClick={() => setShowUpgradeModal(true)}
                     >
-                      <span className="me-2">🔄</span>
                       Renew Premium
                     </Button>
                     <small className="text-muted">
@@ -756,14 +765,14 @@ export default function MyProfile() {
           <Card className="border-0 shadow-sm modern-card mt-4">
             <Card.Body className="p-4 p-md-5">
               <div className="d-flex align-items-center mb-4">
-                <span className="me-3" style={{ fontSize: '1.5rem' }}>🔒</span>
+                <ShieldLock className="me-3" style={{ fontSize: '1.5rem' }} />
                 <h4 className="fw-bold mb-0">Security Settings</h4>
               </div>
 
               {pwError && (
                 <Alert variant="danger" className="rounded-pill mb-4">
                   <div className="d-flex align-items-center">
-                    <span className="me-2">⚠️</span>
+                    <ExclamationTriangle className="me-2" />
                     {pwError}
                   </div>
                 </Alert>
@@ -771,7 +780,7 @@ export default function MyProfile() {
               {pwSuccess && (
                 <Alert variant="success" className="rounded-pill mb-4">
                   <div className="d-flex align-items-center">
-                    <span className="me-2">✅</span>
+                    <CheckSquare className="me-2" />
                     {pwSuccess}
                   </div>
                 </Alert>
@@ -831,7 +840,8 @@ export default function MyProfile() {
                     className="rounded-pill py-3"
                     style={{ fontSize: '1.1rem', fontWeight: '600' }}
                   >
-                    🔐 Update Password
+                    <ShieldLock className="me-2" />
+                    Update Password
                   </Button>
                 </div>
               </Form>
@@ -896,12 +906,17 @@ export default function MyProfile() {
               backdropFilter: 'blur(10px)'
             }}
           >
-            <div className="me-2" style={{ fontSize: '1.5em' }}>🎉👑</div>
+            <div className="me-2" style={{ fontSize: '1.5em' }}>
+              <CheckCircle className="me-1" />
+              <Award style={{ color: '#ffc107' }} />
+            </div>
             <strong className="me-auto">Premium Upgrade Successful!</strong>
           </Toast.Header>
           <Toast.Body className="text-white p-3">
             <div className="text-center mb-3">
-              <div style={{ fontSize: '2.5em', marginBottom: '8px' }}>🚀</div>
+              <div style={{ fontSize: '2.5em', marginBottom: '8px' }}>
+                <Rocket />
+              </div>
               <h5 className="mb-1">Welcome to Premium!</h5>
               <div className="mb-2">
                 <strong>{upgradeDetails?.plan?.charAt(0).toUpperCase() + upgradeDetails?.plan?.slice(1)} Plan</strong> - €{upgradeDetails?.price}
@@ -914,19 +929,19 @@ export default function MyProfile() {
             <div className="small mb-3">
               <Row>
                 <Col xs={6}>
-                  <div className="mb-1">✅ <strong>Unlimited listings</strong></div>
-                  <div className="mb-1">✅ <strong>10% discount</strong></div>
+                  <div className="mb-1"><CheckSquare className="me-1" /><strong>Unlimited listings</strong></div>
+                  <div className="mb-1"><CheckSquare className="me-1" /><strong>10% discount</strong></div>
                 </Col>
                 <Col xs={6}>
-                  <div className="mb-1">✅ <strong>Priority features</strong></div>
-                  <div className="mb-1">✅ <strong>Analytics access</strong></div>
+                  <div className="mb-1"><CheckSquare className="me-1" /><strong>Priority features</strong></div>
+                  <div className="mb-1"><CheckSquare className="me-1" /><strong>Analytics access</strong></div>
                 </Col>
               </Row>
             </div>
             
             <div className="text-center">
               <small style={{ opacity: 0.9 }}>
-                🎯 Start enjoying your premium benefits immediately!
+                Start enjoying your premium benefits immediately!
               </small>
             </div>
           </Toast.Body>

@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import TransactionList from '../components/TransactionList';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 import { usePremium } from '../hooks/usePremium';
+import { Award } from 'react-bootstrap-icons';
 
 const STATUS_OPTIONS = [
   'requested',
@@ -27,7 +28,8 @@ export default function MyBorrowings() {
         <Alert variant="info" className="mb-4">
           <div className="d-flex justify-content-between align-items-center">
             <span>
-              👑 <strong>Get Priority!</strong> Premium users' requests are seen first by lenders.
+              <Award className="me-1" style={{ color: '#ffc107' }} />
+              <strong>Get Priority!</strong> Premium users' requests are seen first by lenders.
             </span>
             <button 
               className="btn btn-warning btn-sm"
