@@ -125,22 +125,22 @@ export default function MyItems({ statusFilter, title = "My Items" }) {
                                 />
                             )}
                             <Card.Body className="d-flex flex-column">
-                                <Card.Title className="h5">{item.title}</Card.Title>
+                                <Card.Title className="h5">{item?.title || 'Unknown Item'}</Card.Title>
                                 <Card.Subtitle className="mb-2 text-secondary">
-                                    {item.category}
+                                    {item?.category || 'No Category'}
                                 </Card.Subtitle>
                                 <Card.Text>
-                                    <strong>Status:</strong> {item.status}
+                                    <strong>Status:</strong> {item?.status || 'Unknown'}
                                 </Card.Text>
                                 <Card.Text>
                                     <strong>Owner:</strong>{' '}
                                     {user?.nickname || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'You'}
                                 </Card.Text>
                                 <Card.Text className="flex-grow-1">
-                                    {item.description}
+                                    {item?.description || 'No description available'}
                                 </Card.Text>
                                 <Card.Text className="fw-bold mb-2">
-                                    €{item.price.toFixed(2)}/week
+                                    €{item?.price?.toFixed(2) || '0.00'}/week
                                 </Card.Text>
                                 
                                 {/* Premium Analytics */}

@@ -220,8 +220,8 @@ export default function ShowTransaction() {
     
     // Determine which user was reviewed and their role
     const reviewedUserId = canReview.role === 'borrower' 
-      ? transaction.lender._id 
-      : transaction.borrower._id;
+      ? transaction.lender?._id 
+      : transaction.borrower?._id;
     const reviewedUserRole = canReview.role === 'borrower' ? 'lender' : 'borrower';
     
     // Navigate to the reviewed user's page with the appropriate tab
@@ -404,7 +404,7 @@ export default function ShowTransaction() {
       if (res.ok) {
         // Save notification for borrower
         if (transaction.borrower?.email) {
-          saveForceNotification(transaction.borrower.email, transaction, 'return');
+          saveForceNotification(transaction.borrower?.email, transaction, 'return');
         }
         
         // Refetch transaction data to update the UI
@@ -1066,7 +1066,7 @@ export default function ShowTransaction() {
                             
                             // Save notification for lender
                             if (transaction.lender?.email) {
-                              saveForceNotification(transaction.lender.email, transaction, 'pickup');
+                              saveForceNotification(transaction.lender?.email, transaction, 'pickup');
                             }
                           } else {
                             setError(data.error || 'Failed to force pick up');
@@ -1198,7 +1198,7 @@ export default function ShowTransaction() {
                   {lender?.email && (
                     <>
                       <br />
-                      Contact: <a href={`mailto:${lender.email}`}>{lender.email}</a>
+                      Contact: <a href={`mailto:${lender?.email}`}>{lender?.email}</a>
                     </>
                   )}
                 </small>
@@ -1254,7 +1254,7 @@ export default function ShowTransaction() {
                             size="sm"
                             className="rounded-pill px-2 py-1"
                             style={{ fontSize: '0.75rem', lineHeight: '1' }}
-                            onClick={() => navigate(`/users/${transaction.borrower._id}/reviews?tab=borrower`)}
+                            onClick={() => navigate(`/users/${transaction.borrower?._id}/reviews?tab=borrower`)}
                           >
                             <PersonCheck className="me-1" style={{ fontSize: '0.75rem' }} />
                             Reviews
@@ -1273,7 +1273,7 @@ export default function ShowTransaction() {
                             size="sm"
                             className="rounded-pill px-2 py-1"
                             style={{ fontSize: '0.75rem', lineHeight: '1' }}
-                            onClick={() => navigate(`/users/${transaction.lender._id}/reviews?tab=lender`)}
+                            onClick={() => navigate(`/users/${transaction.lender?._id}/reviews?tab=lender`)}
                           >
                             <PersonCheck className="me-1" style={{ fontSize: '0.75rem' }} />
                             Reviews

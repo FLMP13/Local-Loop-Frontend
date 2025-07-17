@@ -18,11 +18,11 @@ export function useEditItem() {
       try {
         const res = await axios.get(`/api/items/${id}`);
         const it = res.data;
-        setTitle(it.title);
-        setDescription(it.description);
-        setPrice(it.price);
-        setCategory(it.category);
-        setAvailability(it.availability || []);
+        setTitle(it?.title || '');
+        setDescription(it?.description || '');
+        setPrice(it?.price || 0);
+        setCategory(it?.category || '');
+        setAvailability(it?.availability || []);
       } catch (e) {
         setError('Failed to load item');
       } finally {

@@ -42,9 +42,7 @@ export default function MyBorrowings() {
       )}
       
       <TransactionList
-        endpoint="/api/transactions/borrowings"
-        title="My Borrowings"
-        statusOptions={STATUS_OPTIONS}
+        context="borrowings"
       />
 
       {/* Premium Upgrade Modal */}

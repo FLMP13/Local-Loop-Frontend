@@ -43,9 +43,7 @@ export default function MyLendings() {
       )}
       
       <TransactionList
-        endpoint="/api/transactions/lendings"
-        title="My Lendings"
-        statusOptions={STATUS_OPTIONS}
+        context="lendings"
       />
 
       <PremiumUpgradeModal 

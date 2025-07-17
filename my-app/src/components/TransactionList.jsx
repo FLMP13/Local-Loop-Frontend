@@ -61,10 +61,15 @@ export default function TransactionList({ context = 'all' }) {
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [filter, setFilter] = useState({ name: '', status: 'all', maxPrice: '' });
 
   useEffect(() => {
     fetchTransactions();
   }, []);
+
+  useEffect(() => {
+    handleFilter(filter);
+  }, [filter, transactions]);
 
   const fetchTransactions = async () => {
     try {
@@ -78,6 +83,8 @@ export default function TransactionList({ context = 'all' }) {
         url = '/api/transactions/lendings';
       }
       
+      console.log('Fetching transactions from:', url);
+      
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -87,11 +94,12 @@ export default function TransactionList({ context = 'all' }) {
       }
       
       const data = await response.json();
+      console.log('Received transaction data:', data);
       setTransactions(data);
       setFilteredTransactions(data);
     } catch (err) {
       setError('Failed to load transactions');
-      console.error(err);
+      console.error('Error fetching transactions:', err);
     } finally {
       setLoading(false);
     }
@@ -102,16 +110,16 @@ export default function TransactionList({ context = 'all' }) {
     
     if (filter.name) {
       filtered = filtered.filter(t => 
-        t.item?.name?.toLowerCase().includes(filter.name.toLowerCase())
+        t?.item?.title?.toLowerCase().includes(filter.name.toLowerCase())
       );
     }
     
     if (filter.status && filter.status !== 'all') {
-      filtered = filtered.filter(t => t.status === filter.status);
+      filtered = filtered.filter(t => t?.status === filter.status);
     }
     
     if (filter.maxPrice) {
-      filtered = filtered.filter(t => t.totalPrice <= parseFloat(filter.maxPrice));
+      filtered = filtered.filter(t => (t?.totalPrice || 0) <= parseFloat(filter.maxPrice));
     }
     
     setFilteredTransactions(filtered);
@@ -121,7 +129,7 @@ export default function TransactionList({ context = 'all' }) {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/transactions/${transactionId}/accept`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -136,8 +144,8 @@ export default function TransactionList({ context = 'all' }) {
   const handleReject = async (transactionId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/transactions/${transactionId}/reject`, {
-        method: 'PUT',
+      const response = await fetch(`/api/transactions/${transactionId}/decline`, {
+        method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -376,7 +384,7 @@ export default function TransactionList({ context = 'all' }) {
 
   return (
     <Container fluid className="p-0">
-      <SimpleFilter onFilter={handleFilter} />
+      <SimpleFilter filter={filter} setFilter={setFilter} onFilter={handleFilter} />
       
       {filteredTransactions.length === 0 ? (
         <Alert variant="info" className="text-center">
@@ -402,10 +410,10 @@ export default function TransactionList({ context = 'all' }) {
                   <div className="row align-items-center">
                     <div className="col-md-8">
                       <div className="d-flex align-items-start gap-3">
-                        {transaction.item?.images?.[0] && (
+                        {transaction.item?.images?.length > 0 && (
                           <img
-                            src={transaction.item.images[0]}
-                            alt={transaction.item.name}
+                            src={`/api/items/${transaction.item._id}/image/0`}
+                            alt={transaction.item?.title || 'Item'}
                             className="rounded"
                             style={{
                               width: '60px',
@@ -415,7 +423,7 @@ export default function TransactionList({ context = 'all' }) {
                           />
                         )}
                         <div className="flex-grow-1">
-                          <h5 className="mb-1">{transaction.item?.name || 'Unknown Item'}</h5>
+                          <h5 className="mb-1">{transaction.item?.title || 'Unknown Item'}</h5>
                           <StatusBadge status={transaction.status} />
                           <div className="text-muted small mt-1">
                             {context === 'borrowings' ? 'Lender' : context === 'lendings' ? 'Borrower' : 'With'}: {' '}
@@ -439,7 +447,7 @@ export default function TransactionList({ context = 'all' }) {
                       <div className="d-flex flex-column gap-2 align-items-end">
                         {renderActionButtons(transaction)}
                         <small className="text-muted">
-                          {new Date(transaction.createdAt).toLocaleDateString()}
+                          {transaction.requestDate ? new Date(transaction.requestDate).toLocaleDateString() : 'Unknown date'}
                         </small>
                       </div>
                     </div>

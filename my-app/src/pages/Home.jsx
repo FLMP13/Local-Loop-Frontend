@@ -226,9 +226,9 @@ export default function Home() {
                     <Card.Body className="d-flex flex-column p-3">
                       <div className="d-flex justify-content-between align-items-start mb-2">
                         <Card.Title className="h6 fw-bold mb-0" style={{ color: 'var(--text-primary)' }}>
-                          {item.title}
+                          {item?.title || 'Unknown Item'}
                         </Card.Title>
-                        {item.isPremiumListing && (
+                        {item?.isPremiumListing && (
                           <span className="badge bg-white text-dark ms-2" style={{ 
                             fontSize: '1.2rem', 
                             fontWeight: 'bold',
@@ -240,7 +240,7 @@ export default function Home() {
                         )}
                       </div>
                       <Card.Subtitle className="mb-2 small text-muted">
-                        {item.category}
+                        {item?.category || 'No Category'}
                       </Card.Subtitle>
                       <Card.Text className="flex-grow-1 small text-muted mb-3" style={{ 
                         display: '-webkit-box',
@@ -248,12 +248,12 @@ export default function Home() {
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden'
                       }}>
-                        {item.description}
+                        {item?.description || 'No description available'}
                       </Card.Text>
                       <div className="mb-3">
                         {/* Regular pricing display */}
                         <span className="h5 fw-bold" style={{ color: 'var(--brand)' }}>
-                          €{item.price.toFixed(2)}
+                          €{item?.price?.toFixed(2) || '0.00'}
                         </span>
                         <small className="text-muted">/week</small>
                       </div>
