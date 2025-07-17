@@ -68,7 +68,7 @@ export function useAddItem() {
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
-    formData.append('price', parseFloat(price));
+    formData.append('price', Math.round(parseFloat(price) * 100) / 100);
     formData.append('category', category);
     images.forEach(img => formData.append('images', img));
 
