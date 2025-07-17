@@ -119,7 +119,10 @@ export default function TransactionList({ context = 'all' }) {
     }
     
     if (filter.maxPrice) {
-      filtered = filtered.filter(t => (t?.totalPrice || 0) <= parseFloat(filter.maxPrice));
+      filtered = filtered.filter(t => {
+        const price = t?.pricing?.finalPrice || t?.totalPrice || t?.finalLendingFee || 0;
+        return price <= parseFloat(filter.maxPrice);
+      });
     }
     
     setFilteredTransactions(filtered);
@@ -438,7 +441,19 @@ export default function TransactionList({ context = 'all' }) {
                             </strong>
                           </div>
                           <div className="text-muted small">
-                            Duration: {transaction.duration} days • Total: <CurrencyDollar className="me-1" />{transaction.totalPrice?.toFixed(2) || '0.00'}
+                            Duration: {(() => {
+                              if (transaction.pricing?.weeks) {
+                                const days = transaction.pricing.weeks * 7;
+                                return `${days} days`;
+                              } else if (transaction.requestedFrom && transaction.requestedTo) {
+                                const days = Math.ceil((new Date(transaction.requestedTo) - new Date(transaction.requestedFrom)) / (1000 * 60 * 60 * 24)) + 1;
+                                return `${days} days`;
+                              }
+                              return 'Unknown duration';
+                            })()} • Total: <CurrencyDollar className="me-1" />{(() => {
+                              const price = transaction.pricing?.finalPrice || transaction.totalPrice || transaction.finalLendingFee || 0;
+                              return price.toFixed(2);
+                            })()}
                           </div>
                         </div>
                       </div>
