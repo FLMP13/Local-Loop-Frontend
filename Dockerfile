@@ -14,7 +14,7 @@ RUN npm install
 COPY my-app/ .
 
 # Build arguments for environment variables
-ARG REACT_APP_API_URL=http://localhost:5000/api
+ARG REACT_APP_API_URL=http://localhost:3000/api
 ARG REACT_APP_PAYPAL_CLIENT_ID
 
 # Set environment variables for build
