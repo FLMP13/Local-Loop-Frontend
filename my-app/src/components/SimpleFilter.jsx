@@ -12,6 +12,16 @@ export default function SimpleFilter({ filter, setFilter }) {
   // Provide safe defaults in case filter is undefined
   const safeFilter = filter || {};
   
+  // Helper function to safely update filter with proper fallbacks
+  const updateFilter = (field, value) => {
+    if (setFilter) {
+      setFilter(prevFilter => {
+        const currentFilter = prevFilter || { name: '', status: 'all', maxPrice: '', sortBy: 'date_desc' };
+        return { ...currentFilter, [field]: value };
+      });
+    }
+  };
+  
   return (
     <Form className="mb-3">
       <Row className="g-2">
@@ -19,7 +29,7 @@ export default function SimpleFilter({ filter, setFilter }) {
           <Form.Control
             placeholder="Name, Description, or Username"
             value={safeFilter.name || ''}
-            onChange={e => setFilter && setFilter(f => ({ ...f, name: e.target.value }))}
+            onChange={e => updateFilter('name', e.target.value)}
           />
         </Col>
         <Col md>
@@ -27,13 +37,13 @@ export default function SimpleFilter({ filter, setFilter }) {
             type="number"
             placeholder="Max Price"
             value={safeFilter.maxPrice || ''}
-            onChange={e => setFilter && setFilter(f => ({ ...f, maxPrice: e.target.value }))}
+            onChange={e => updateFilter('maxPrice', e.target.value)}
           />
         </Col>
         <Col md>
           <Form.Select
             value={safeFilter.status || 'all'}
-            onChange={e => setFilter && setFilter(f => ({ ...f, status: e.target.value }))}
+            onChange={e => updateFilter('status', e.target.value)}
           >
             <option value="all">All Statuses</option>
             {statusOptions.map(s => (
@@ -44,7 +54,7 @@ export default function SimpleFilter({ filter, setFilter }) {
         <Col md>
           <Form.Select
             value={safeFilter.sortBy || 'date_desc'}
-            onChange={e => setFilter && setFilter(f => ({ ...f, sortBy: e.target.value }))}
+            onChange={e => updateFilter('sortBy', e.target.value)}
           >
             <option value="date_desc">Newest First</option>
             <option value="date_asc">Oldest First</option>

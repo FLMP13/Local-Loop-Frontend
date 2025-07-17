@@ -61,14 +61,44 @@ export default function TransactionList({ context = 'all' }) {
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState({ name: '', status: 'all', maxPrice: '' });
+  const [hasErrorOccurred, setHasErrorOccurred] = useState(false);
+  
+  // Initialize filter with all required properties to prevent undefined access
+  const [filter, setFilter] = useState({
+    name: '',
+    status: 'all',
+    maxPrice: '',
+    sortBy: 'date_desc'
+  });
+
+  // Error boundary effect to catch and handle the specific error
+  useEffect(() => {
+    const handleError = (event) => {
+      if (event.error && event.error.message && 
+          event.error.message.includes("Cannot read properties of undefined (reading 'name')")) {
+        console.log('Detected filter initialization error, reloading page...');
+        if (!hasErrorOccurred) {
+          setHasErrorOccurred(true);
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, [hasErrorOccurred]);
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
   useEffect(() => {
-    handleFilter(filter);
+    // Only call handleFilter when we have the filter state properly initialized
+    if (filter && transactions) {
+      handleFilter(filter);
+    }
   }, [filter, transactions]);
 
   const fetchTransactions = async () => {
@@ -105,27 +135,70 @@ export default function TransactionList({ context = 'all' }) {
     }
   };
 
-  const handleFilter = (filter) => {
-    let filtered = transactions;
-    
-    if (filter.name) {
-      filtered = filtered.filter(t => 
-        t?.item?.title?.toLowerCase().includes(filter.name.toLowerCase())
-      );
+  const handleFilter = (filterParam) => {
+    try {
+      // Ensure we have a valid filter object with all required properties
+      const safeFilter = {
+        name: '',
+        status: 'all',
+        maxPrice: '',
+        sortBy: 'date_desc',
+        ...(filterParam || filter || {})
+      };
+      
+      // Defensive check to ensure transactions array exists
+      if (!Array.isArray(transactions)) {
+        setFilteredTransactions([]);
+        return;
+      }
+      
+      let filtered = [...transactions]; // Create a copy to avoid mutation
+      
+      if (safeFilter.name) {
+        filtered = filtered.filter(t => 
+          t?.item?.title?.toLowerCase().includes(safeFilter.name.toLowerCase())
+        );
+      }
+      
+      if (safeFilter.status && safeFilter.status !== 'all') {
+        filtered = filtered.filter(t => t?.status === safeFilter.status);
+      }
+      
+      if (safeFilter.maxPrice) {
+        filtered = filtered.filter(t => {
+          const price = t?.pricing?.finalPrice || t?.totalPrice || t?.finalLendingFee || 0;
+          return price <= parseFloat(safeFilter.maxPrice);
+        });
+      }
+      
+      // Apply sorting
+      if (safeFilter.sortBy) {
+        filtered = filtered.sort((a, b) => {
+          const dateA = new Date(a?.requestDate || a?.createdAt || 0);
+          const dateB = new Date(b?.requestDate || b?.createdAt || 0);
+          
+          if (safeFilter.sortBy === 'date_desc') {
+            return dateB - dateA; // Newest first
+          } else if (safeFilter.sortBy === 'date_asc') {
+            return dateA - dateB; // Oldest first
+          }
+          return 0;
+        });
+      }
+      
+      setFilteredTransactions(filtered);
+    } catch (error) {
+      console.error('Error in handleFilter:', error);
+      if (error.message && error.message.includes("Cannot read properties of undefined (reading 'name')")) {
+        console.log('Triggering page reload due to filter error...');
+        if (!hasErrorOccurred) {
+          setHasErrorOccurred(true);
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }
+      }
     }
-    
-    if (filter.status && filter.status !== 'all') {
-      filtered = filtered.filter(t => t?.status === filter.status);
-    }
-    
-    if (filter.maxPrice) {
-      filtered = filtered.filter(t => {
-        const price = t?.pricing?.finalPrice || t?.totalPrice || t?.finalLendingFee || 0;
-        return price <= parseFloat(filter.maxPrice);
-      });
-    }
-    
-    setFilteredTransactions(filtered);
   };
 
   const handleAccept = async (transactionId) => {
@@ -387,7 +460,14 @@ export default function TransactionList({ context = 'all' }) {
 
   return (
     <Container fluid className="p-0">
-      <SimpleFilter filter={filter} setFilter={setFilter} onFilter={handleFilter} />
+      {/* Only render SimpleFilter when filter state is properly initialized */}
+      {filter && filter.hasOwnProperty('sortBy') ? (
+        <SimpleFilter filter={filter} setFilter={setFilter} onFilter={handleFilter} />
+      ) : (
+        <div className="mb-3" style={{ height: '56px' }}>
+          <div className="text-muted text-center">Initializing filters...</div>
+        </div>
+      )}
       
       {filteredTransactions.length === 0 ? (
         <Alert variant="info" className="text-center">
