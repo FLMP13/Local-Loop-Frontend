@@ -1444,7 +1444,7 @@ export default function ShowTransaction() {
                   <div>
                     <h6 className="fw-bold text-danger mb-2">Request Declined</h6>
                     <p className="mb-0 text-muted">
-                      {transaction.lenderMessage ? transaction.lenderMessage : 'The lender has declined your request.'}
+                      {transaction.lenderMessage || 'The request has been declined.'}
                     </p>
                   </div>
                 </div>
