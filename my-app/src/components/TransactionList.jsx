@@ -262,11 +262,11 @@ export default function TransactionList({ context = 'all' }) {
           <Button
             variant="outline-primary"
             size="sm"
-            onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}/edit`); }}
+            onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}`); }}
             className="rounded-pill"
           >
-            <ArrowRepeat className="me-1" />
-            Counter-Offer
+            <PencilSquare className="me-1" />
+            Renegotiate
           </Button>
         </div>
       );
@@ -359,32 +359,24 @@ export default function TransactionList({ context = 'all' }) {
 
     // Return actions for borrowed items
     if (transaction.status === 'borrowed') {
-      return (
-        <div className="d-flex gap-2 flex-wrap">
+      if (isBorrower) {
+        return (
           <Button
             variant="success"
             size="sm"
             onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showReturn=1`); }}
-            className="w-100 rounded-pill"
+            className="rounded-pill"
           >
             <ShieldCheck className="me-1" />
             Confirm Return
           </Button>
-          <Button
-            variant="warning"
-            size="sm"
-            onClick={e => { e.stopPropagation(); navigate(`/transactions/${transaction._id}?showDamage=1`); }}
-            className="w-100 rounded-pill"
-          >
-            <ExclamationTriangle className="me-1" />
-            Report Damage
-          </Button>
-        </div>
-      );
+        );
+      }
+      // For lenders, don't show anything here - they get "Report Issue" and "Mark Complete" after status is 'returned'
     }
 
-    // Return code entry for returned items
-    if (transaction.status === 'returned' && isBorrower) {
+    // Return code entry for returned items (only if not already entered)
+    if (transaction.status === 'returned' && isBorrower && !transaction.returnCodeUsed) {
       return (
         <Button
           variant="success"
@@ -412,8 +404,8 @@ export default function TransactionList({ context = 'all' }) {
       );
     }
 
-    // Completion actions
-    if (transaction.status === 'returned' && !transaction.damageReported) {
+    // Completion actions - ONLY FOR LENDERS
+    if (transaction.status === 'returned' && !transaction.damageReported && isLender) {
       return (
         <div className="d-flex gap-2 flex-wrap">
           <Button
@@ -522,15 +514,12 @@ export default function TransactionList({ context = 'all' }) {
                           </div>
                           <div className="text-muted small">
                             Duration: {(() => {
-                              if (transaction.pricing?.weeks) {
-                                const days = transaction.pricing.weeks * 7;
-                                return `${days} days`;
-                              } else if (transaction.requestedFrom && transaction.requestedTo) {
+                              if (transaction.requestedFrom && transaction.requestedTo) {
                                 const days = Math.ceil((new Date(transaction.requestedTo) - new Date(transaction.requestedFrom)) / (1000 * 60 * 60 * 24)) + 1;
                                 return `${days} days`;
                               }
                               return 'Unknown duration';
-                            })()} • Total: <CurrencyDollar className="me-1" />{(() => {
+                            })()} • Total: €{(() => {
                               const price = transaction.pricing?.finalPrice || transaction.totalPrice || transaction.finalLendingFee || 0;
                               return price.toFixed(2);
                             })()}
