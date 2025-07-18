@@ -4,7 +4,7 @@ import 'react-day-picker/style.css';
 import { useShowItem } from '../hooks/useShowItem';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Col, Container, Row, Alert, Spinner } from 'react-bootstrap';
+import { Button, Card, Col, Container, Row, Alert, Spinner, Modal } from 'react-bootstrap';
 import axios from 'axios';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 import { usePremium } from '../hooks/usePremium';
@@ -21,13 +21,22 @@ import {
   Envelope,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  ExclamationTriangle
 } from 'react-bootstrap-icons';
 
 export default function ShowItem() {
     const { user } = useContext(AuthContext);
     const { isPremium } = usePremium();
-    const { item, loading, error, handleDelete } = useShowItem();
+    const { 
+        item, 
+        loading, 
+        error, 
+        showDeleteModal,
+        setShowDeleteModal,
+        handleDeleteClick,
+        handleDeleteConfirm
+    } = useShowItem();
     const navigate = useNavigate();
     const [selectedRange, setSelectedRange] = useState();
     const [unavailableRanges, setUnavailableRanges] = useState([]);
@@ -415,7 +424,7 @@ export default function ShowItem() {
                                                     </Button>
                                                     <Button
                                                         variant="outline-danger"
-                                                        onClick={handleDelete}
+                                                        onClick={handleDeleteClick}
                                                         className="rounded-pill py-2"
                                                         size="lg"
                                                     >
@@ -530,6 +539,41 @@ export default function ShowItem() {
                 onHide={() => setShowUpgradeModal(false)}
                 context="discount"
             />
+
+            {/* Custom Delete Confirmation Modal */}
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="d-flex align-items-center">
+                        <ExclamationTriangle className="me-2 text-warning" />
+                        Confirm Delete
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="text-center py-4">
+                    <div className="mb-3">
+                        <h5 className="fw-bold mb-2">Delete "{item?.title}"?</h5>
+                        <p className="text-muted mb-0">
+                            This action cannot be undone. Your item will be permanently removed from the platform.
+                        </p>
+                    </div>
+                </Modal.Body>
+                <Modal.Footer className="border-0 justify-content-center">
+                    <Button 
+                        variant="outline-secondary" 
+                        onClick={() => setShowDeleteModal(false)}
+                        className="rounded-pill px-4"
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="danger" 
+                        onClick={handleDeleteConfirm}
+                        className="rounded-pill px-4"
+                    >
+                        <Trash className="me-2" />
+                        Delete Item
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 }
