@@ -1,10 +1,3 @@
-ToDo List:
-- Usage of the Web Service
-- Code Comments
-- PDF with Screenshots
-- PDF with team contributions
-- Scan of Responsibility Statement
-
 For DEVELOPMENT:
 Enter "npm run dev" (in /my-app) to start Script to run the Frontend on http://localhost:5173
  
@@ -17,6 +10,3 @@ Your advisor should be able to run your app like this:
 4. Move docker-compose.yml one folder up (from /Team 24/Backend to /Team 24)
 5. docker compose up –d
     For this command, a Docker Container should be available like with Docker Desktop
-
-Usage of the Web-Service:
-ToDo (as well as code commenting)
