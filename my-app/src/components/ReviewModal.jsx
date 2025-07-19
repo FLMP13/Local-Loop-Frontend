@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { StarFill } from 'react-bootstrap-icons';
 
+// Review modal component for submitting reviews after transactions
 export default function ReviewModal({ show, onHide, transaction, userRole, onReviewSubmitted }) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');

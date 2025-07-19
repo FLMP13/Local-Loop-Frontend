@@ -25,6 +25,7 @@ import {
   ExclamationTriangle
 } from 'react-bootstrap-icons';
 
+// Main component for showing item details
 export default function ShowItem() {
     const { user } = useContext(AuthContext);
     const { isPremium } = usePremium();
@@ -85,6 +86,7 @@ export default function ShowItem() {
         isPremium: false
     };
 
+    // Handle borrow request
     const handleRequestBorrow = async () => {
         if (!selectedRange?.from || !selectedRange?.to) {
             alert('Please select a valid date range.');

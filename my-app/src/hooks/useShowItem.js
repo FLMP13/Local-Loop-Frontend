@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// This hook manages the state and logic for showing a single item
 export function useShowItem() {
   const { id } = useParams();
   const navigate = useNavigate();

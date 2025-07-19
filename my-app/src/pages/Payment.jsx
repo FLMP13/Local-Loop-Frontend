@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext"; // Import AuthContext to a
 import axios from "axios";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 
+// Payment component for handling PayPal transactions
 export default function Payment() {
   const { id } = useParams(); // transaction ID
   const [clientId, setClientId] = useState(null);

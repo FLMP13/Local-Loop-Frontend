@@ -16,16 +16,16 @@ import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 
 const categories = [
   'Electronics', 
-  'Furniture', // Is that something to lend/borrow?
-  'Clothing', // Is that something to lend/borrow?
+  'Furniture',
+  'Clothing', 
   'Books',
-  'Sports', //Sporting equipment?
+  'Sports', 
   'Toys',
   'Tools',
   'Other'
 ];
 
-
+// AddItem Component
 export default function AddItem() {
     const {
         user,

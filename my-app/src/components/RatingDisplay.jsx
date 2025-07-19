@@ -1,6 +1,7 @@
 import React from 'react';
 import { StarFill, Star } from 'react-bootstrap-icons';
 
+// Rating display component which shows the average rating and number of reviews
 export default function RatingDisplay({ rating, count, size = 'sm' }) {
   if (count === 0) {
     return <span className="text-muted">No ratings yet</span>;

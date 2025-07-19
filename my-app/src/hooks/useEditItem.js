@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// This hook manages the state and logic for editing an existing item
 export function useEditItem() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export function useEditItem() {
     setAvailability(ranges);
   };
 
+  // Function to handle the form submission for editing the item
   const handleSubmit = async e => {
     e.preventDefault();
     const updated = {

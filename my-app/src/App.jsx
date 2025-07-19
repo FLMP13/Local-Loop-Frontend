@@ -35,6 +35,7 @@ import {
 export const CounterContext = createContext();
 export const NotificationContext = createContext();
 
+// Notification bubble component to show counts
 function NotificationBubble({ count }) {
   if (!count || count < 1) return null;
   return (
@@ -61,6 +62,7 @@ function NotificationBubble({ count }) {
   );
 }
 
+// Main App component
 export default function App() {
   const { user, logout } = useContext(AuthContext);
   const [borrowingsCount, setBorrowingsCount] = useState(0);

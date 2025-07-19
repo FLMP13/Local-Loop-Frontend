@@ -5,6 +5,7 @@ import axios from 'axios';
 import RatingDisplay from '../components/RatingDisplay';
 import { ExclamationTriangle } from 'react-bootstrap-icons';
 
+// Main component for displaying user reviews
 export default function UserReviews() {
   const { userId } = useParams();
   const location = useLocation();
@@ -53,6 +54,7 @@ export default function UserReviews() {
     fetchUser();
   }, [userId]);
 
+  // Fetch user avatar as a blob
   const fetchUserAvatar = async () => {
     try {
       const response = await axios.get(`/api/users/${userId}/avatar`, {

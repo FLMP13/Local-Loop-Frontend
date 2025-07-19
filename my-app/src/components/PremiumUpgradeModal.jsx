@@ -3,7 +3,8 @@ import {Modal, Button, Card, Row, Col, Badge, Alert} from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { CurrencyDollar, Rocket, Star } from 'react-bootstrap-icons';
 
-
+// Premium upgrade modal component
+// Displays upgrade options and handles navigation to payment page
 export default function PremiumUpgradeModal({ show, onHide, currentListings, maxListings, context = 'limit' }) {
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [error, setError] = useState(null);

@@ -8,6 +8,7 @@ const statusOptions = [
   'returned', 'completed', 'renegotiation_requested', 'retracted'
 ];
 
+// Simple filter component for searching and filtering items
 export default function SimpleFilter({ filter, setFilter }) {
   // Provide safe defaults in case filter is undefined
   const safeFilter = filter || {};

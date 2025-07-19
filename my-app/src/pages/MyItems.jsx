@@ -9,11 +9,12 @@ import Button from 'react-bootstrap/Button';
 import Alert from 'react-bootstrap/Alert';
 import Spinner from 'react-bootstrap/Spinner';
 import { Star } from 'react-bootstrap-icons';
-import { AuthContext } from '../context/AuthContext'; // Adjust the path if needed
+import { AuthContext } from '../context/AuthContext'; 
 import { useMyItems } from '../hooks/useMyItems';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 import { usePremium } from '../hooks/usePremium';
 
+// MyItems component to display user's items with optional status filter
 export default function MyItems({ statusFilter, title = "My Items" }) {
     const { user } = useContext(AuthContext);
     const { isPremium } = usePremium();

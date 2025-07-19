@@ -4,6 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { CheckCircle, ShieldCheck, CurrencyDollar, Phone, ArrowRight } from 'react-bootstrap-icons';
 
+// PaymentSuccess component to display successful payment details
 export default function PaymentSuccess() {
   const { transactionId } = useParams();
   const [transaction, setTransaction] = useState(null);

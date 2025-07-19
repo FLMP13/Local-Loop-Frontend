@@ -54,6 +54,7 @@ function StatusBadge({ status }) {
   );
 }
 
+// Transaction list component for displaying and managing transactions
 export default function TransactionList({ context = 'all' }) {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -94,6 +95,7 @@ export default function TransactionList({ context = 'all' }) {
     fetchTransactions();
   }, []);
 
+  // Re-fetch transactions when context changes
   useEffect(() => {
     // Only call handleFilter when we have the filter state properly initialized
     if (filter && transactions) {
@@ -101,6 +103,7 @@ export default function TransactionList({ context = 'all' }) {
     }
   }, [filter, transactions]);
 
+  // Fetch transactions based on context
   const fetchTransactions = async () => {
     try {
       setLoading(true);
@@ -135,6 +138,7 @@ export default function TransactionList({ context = 'all' }) {
     }
   };
 
+  // Handle filtering logic
   const handleFilter = (filterParam) => {
     try {
       // Ensure we have a valid filter object with all required properties
@@ -201,6 +205,7 @@ export default function TransactionList({ context = 'all' }) {
     }
   };
 
+  // Handle accept/reject actions for transactions
   const handleAccept = async (transactionId) => {
     try {
       const token = localStorage.getItem('token');
@@ -217,6 +222,7 @@ export default function TransactionList({ context = 'all' }) {
     }
   };
 
+  // Handle reject action for transactions
   const handleReject = async (transactionId) => {
     try {
       const token = localStorage.getItem('token');
@@ -233,6 +239,7 @@ export default function TransactionList({ context = 'all' }) {
     }
   };
 
+  // Render action buttons based on transaction status and user role
   const renderActionButtons = (transaction) => {
     const isLender = user?.id === transaction.lender?._id;
     const isBorrower = user?.id === transaction.borrower?._id;
@@ -372,7 +379,6 @@ export default function TransactionList({ context = 'all' }) {
           </Button>
         );
       }
-      // For lenders, don't show anything here - they get "Report Issue" and "Mark Complete" after status is 'returned'
     }
 
     // Return code entry for returned items (only if not already entered)

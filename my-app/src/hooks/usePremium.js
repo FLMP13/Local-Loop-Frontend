@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
+// This hook manages the state and logic for premium features
 export function usePremium() {
   const { token, user, updateUser } = useContext(AuthContext);
   const [premiumStatus, setPremiumStatus] = useState(null);
@@ -52,6 +53,7 @@ export function usePremium() {
     }
   };
 
+  // Function to upgrade to premium
   const upgradeToPremium = async (plan) => {
     try {
       const response = await axios.post('/api/users/me/premium/upgrade', { plan }, {
@@ -77,6 +79,7 @@ export function usePremium() {
     }
   };
 
+  // Function to cancel premium subscription
   const cancelPremium = async (reason = '') => {
     try {
       const response = await axios.post('/api/subscriptions/me/cancel', { reason }, {

@@ -16,6 +16,7 @@ const categories = [
   'Books','Sports','Toys','Tools','Other'
 ]
 
+// Home component displays the main search and item listing
 export default function Home() {
   const { user } = useContext(AuthContext)
 

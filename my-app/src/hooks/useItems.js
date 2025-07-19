@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext.jsx';
 
+// This hook manages the state and logic for fetching items based on filters
 export function useItems(filters) {
   const { user } = useContext(AuthContext);
   const [items, setItems] = useState([]);

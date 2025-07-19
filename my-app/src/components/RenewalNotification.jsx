@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { CheckCircle } from 'react-bootstrap-icons';
 
+// Renewal notification component
 export default function RenewalNotification() {
   const { token, user } = useContext(AuthContext);
   const [notification, setNotification] = useState(null);
@@ -18,6 +19,7 @@ export default function RenewalNotification() {
     }
   }, [token, user]);
 
+  // Check for renewal notifications from the server
   const checkForRenewalNotifications = async () => {
     try {
       const response = await axios.get('/api/subscriptions/me/notifications', {

@@ -19,8 +19,7 @@ import {
   Rocket
 } from 'react-bootstrap-icons';
 
-// Profile picture persistence implemented with authenticated blob fetching
-
+// Main profile page component
 export default function MyProfile() {
   const { logout, user } = useContext(AuthContext)
   const navigate = useNavigate()
@@ -147,6 +146,7 @@ export default function MyProfile() {
     }
   }, [avatarBlobUrl, formData.avatarUrl])
 
+  // Fetch avatar blob URL to display profile picture
   const fetchAvatarBlob = async () => {
     try {
       const token = localStorage.getItem('token')
@@ -161,6 +161,7 @@ export default function MyProfile() {
     }
   }
 
+  // Handle logout
   const handleLogout = () => {
     logout()
     navigate('/')                                                          // go home after logout
@@ -190,6 +191,7 @@ export default function MyProfile() {
     }
   }
 
+  // Handle avatar deletion
   const handleDeleteAvatar = () => {
     setDeleteAvatar(true)
     setAvatarFile(null)
@@ -209,6 +211,7 @@ export default function MyProfile() {
     }))
   }
 
+  // Handle profile submission when user updates their profile
   const handleProfileSubmit = async e => {
     e.preventDefault()
     setError(''); setSuccess('')
@@ -263,6 +266,7 @@ export default function MyProfile() {
     }
   }
 
+  // Handle password change
   const handlePasswordChange = e =>
     setPasswords(pw => ({ ...pw, [e.target.name]: e.target.value }))
 
@@ -275,6 +279,7 @@ export default function MyProfile() {
       return
     }
 
+    // Check password strength
     try {
       const token = localStorage.getItem('token')
       await axios.put(
@@ -295,6 +300,7 @@ export default function MyProfile() {
     }
   }
 
+  //  Handle premium upgrade
   const handlePremiumUpgrade = async (plan) => {
     try {
       await upgradeToPremium(plan);
@@ -305,6 +311,7 @@ export default function MyProfile() {
     }
   };
 
+  // Handle premium cancellation
   const handlePremiumCancel = async () => {
     try {
       await cancelPremium();

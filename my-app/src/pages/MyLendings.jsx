@@ -17,6 +17,7 @@ const STATUS_OPTIONS = [
   'retracted'
 ];
 
+// MyLendings Component
 export default function MyLendings() {
   const { user } = useContext(AuthContext);
   const { isPremium } = usePremium();

@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import PayPalPayment from "../components/PayPalPayment";
 
+// PremiumPayment component for handling premium subscription payments
 export default function PremiumPayment() {
   const { plan } = useParams(); // monthly or yearly
   const [clientId, setClientId] = useState(null);
@@ -44,6 +45,7 @@ export default function PremiumPayment() {
     }
   };
 
+  // Handle successful payment 
   const handlePaymentSuccess = async ({ subscriptionID }) => {
     try {
       const token = localStorage.getItem("token");

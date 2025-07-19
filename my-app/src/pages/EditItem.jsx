@@ -8,12 +8,12 @@ import Container from 'react-bootstrap/Container';
 import Alert from 'react-bootstrap/Alert';
 import Spinner from 'react-bootstrap/Spinner';
 
-// Needs to be adapted to categories
 const categories = [
   'Electronics','Furniture','Clothing',
   'Books','Sports','Toys','Tools','Other'
 ];
 
+// EditItem Component
 export default function EditItem() {
   const {
     title,

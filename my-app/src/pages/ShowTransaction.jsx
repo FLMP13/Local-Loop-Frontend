@@ -52,6 +52,7 @@ const STATUS_COLORS = {
   retracted: '#757575'
 };
 
+// StatusBadge component to display transaction status with color coding
 function StatusBadge({ status }) {
   const color = STATUS_COLORS[status] || '#757575';
   const label = {
@@ -82,6 +83,7 @@ function StatusBadge({ status }) {
   );
 }
 
+// ShowTransaction component to display transaction details and actions
 export default function ShowTransaction() {
   const { id } = useParams();
   const { user } = useContext(AuthContext);
@@ -178,6 +180,7 @@ export default function ShowTransaction() {
     throw new Error('Failed to refetch transaction');
   };
 
+  // Handle various actions based on user role and transaction status
   const handleAction = async (action) => {
     setUpdating(true);
     try {
@@ -196,6 +199,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Complete the transaction
   const handleCompleteTransaction = async () => {
     setUpdating(true);
     try {
@@ -214,6 +218,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Handle review submission
   const handleReviewSubmitted = async () => {
     setCanReview({ canReview: false, role: null });
     setShowReviewModal(false);
@@ -228,6 +233,7 @@ export default function ShowTransaction() {
     navigate(`/users/${reviewedUserId}/reviews?tab=${reviewedUserRole}`);
   };
 
+  // Handle renegotiation proposal submission
   const handleRenegotiate = async ({ from, to, message }, id) => {
     try {
       const token = localStorage.getItem('token');
@@ -253,6 +259,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle accepting or declining a renegotiation proposal
   const handleAcceptRenegotiation = async (id) => {
     try {
       const token = localStorage.getItem('token');
@@ -272,6 +279,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle declining a renegotiation proposal
   const handleDeclineRenegotiation = async (id) => {
     try {
       const token = localStorage.getItem('token');
@@ -291,6 +299,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle deleting the transaction
   const handleDeleteClick = async () => {
     if (!window.confirm('Are you sure you want to delete this transaction?')) return;
     try {
@@ -307,6 +316,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle getting the return code for the lender
   const handleGetReturnCode = async () => {
     setReturnError('');
     try {
@@ -326,6 +336,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle submitting the return code for the borrower
   const handleSubmitReturnCode = async () => {
     setReturnError('');
     try {
@@ -372,8 +383,6 @@ export default function ShowTransaction() {
             // Update counters since transaction status changed
             fetchCounts();
             
-            // Review modal timing is now handled manually - no auto-show
-            // Only show review modal immediately if user is NOT the borrower
             if (user?.id !== transaction.borrower?._id) {
               // Show review modal for lender immediately
               setShowReviewModal(true);
@@ -392,6 +401,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle force completing the return
   const handleForceComplete = async () => {
     setReturnError('');
     setUpdating(true);
@@ -428,6 +438,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Handle submitting the pickup code
   const handlePickupCodeSubmit = async () => {
     setPickupError('');
     setUpdating(true);
@@ -450,14 +461,7 @@ export default function ShowTransaction() {
         setPickupCodeInput('');
         
         // Show payment success popup for lender (who enters the code)
-        // The lender receives payment when borrower's pickup code is confirmed
         setShowPaymentSuccess(true);
-        // Message will stay visible until user manually dismisses it
-        
-        // If this is a different user session (borrower not present), save notification for lender
-        // The payment success is already shown for current lender, but if lender logs in later, they should see it
-        // We could add this, but typically the lender who enters the code sees the immediate notification
-        // Only add if we want to ensure lender always sees this even if they log out/in
         
         // Update counters since transaction status changed
         fetchCounts();
@@ -470,6 +474,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Handle confirming no damage by the lender
   const handleConfirmNoDamage = async () => {
     setUpdating(true);
     try {
@@ -508,6 +513,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Handle reporting damage by the lender
   const handleReportDamage = async () => {
     setDamageError('');
     setUpdating(true);
