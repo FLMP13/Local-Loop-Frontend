@@ -1,40 +1,12 @@
-Perform "npm run dev" to run the frontend on http://locahost:5173
-
-Proposed Project Structure:
-SEBA
-    Backend
-        node_modules
-        src
-            config
-            controllers
-            middleware
-            models
-            routes
-            services
-            utils
-            index.js
-        .env
-        .gitignore
-        package-lock.json
-        package.json
-        README.md
-    Frontend
-        my-app
-            node_modules
-            src
-                api
-                assets
-                components
-                context
-                hooks
-                pages
-                styles
-                App.jsx
-                main.jsx
-            eslint.config.js
-            index.html
-            package-lock.json
-            package.json
-            vite.config.js
-        .gitignore
-        README.md    
+For DEVELOPMENT:
+Enter "npm run dev" (in /my-app) to start Script to run the Frontend on http://localhost:5173
+ 
+Your advisor should be able to run your app like this:
+1. Create „Team X“ folder
+2. git clone git@gitlab.lrz.de:seba-master-2025/team-24/Backend.git
+    Authenticate: Enter SSH Passcode or HTML Login
+3. git clone git@gitlab.lrz.de:seba-master-2025/team-24/Frontend.git
+    Authenticate: Enter SSH Passcode or HTML Login
+4. Move docker-compose.yml one folder up (from /Team 24/Backend to /Team 24)
+5. docker compose up –d
+    For this command, a Docker Container should be available like with Docker Desktop

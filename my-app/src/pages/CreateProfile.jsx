@@ -14,6 +14,7 @@ import { AuthContext } from '../context/AuthContext'
 import axios from 'axios'   
 import PasswordInput from '../components/PasswordInput'
 
+// CreateProfile Component
 export default function CreateProfile() {
   const { login } = useContext(AuthContext)
   const [form, setForm] = useState({
@@ -217,7 +218,7 @@ export default function CreateProfile() {
                 name="password"
                 value={form.password}
                 onChange={handleChange}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 minLength={6}
                 required
               />

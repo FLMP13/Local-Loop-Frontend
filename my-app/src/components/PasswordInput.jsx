@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Form, InputGroup, Button } from 'react-bootstrap';
+import { Eye, EyeSlash } from 'react-bootstrap-icons';
 
+// Password input field with visibility toggle
 const PasswordInput = ({ 
   name, 
   value, 
@@ -53,7 +55,7 @@ const PasswordInput = ({
         type="button"
       >
         <span style={{ fontSize: '1rem' }}>
-          {showPassword ? '🐵' : '🙈'}
+          {showPassword ? <EyeSlash /> : <Eye />}
         </span>
       </Button>
     </InputGroup>

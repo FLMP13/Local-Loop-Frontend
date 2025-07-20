@@ -6,6 +6,7 @@ import axios from 'axios'
 import { AuthContext } from '../context/AuthContext.jsx'
 import PasswordInput from '../components/PasswordInput'
 
+// Login component allows users to log in to their account
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
   const [error, setError] = useState('') 

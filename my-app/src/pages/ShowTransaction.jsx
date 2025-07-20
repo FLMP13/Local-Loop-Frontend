@@ -13,6 +13,26 @@ import Spinner from 'react-bootstrap/Spinner';
 import ReviewModal from '../components/ReviewModal';
 import axios from 'axios';
 import { DayPicker } from 'react-day-picker';
+import { 
+  Search, 
+  CheckCircle, 
+  ExclamationTriangle, 
+  Key, 
+  ShieldCheck, 
+  CurrencyDollar, 
+  InfoCircle, 
+  XCircle,
+  PersonCheck,
+  CheckSquare,
+  ArrowLeft,
+  ArrowRight,
+  X,
+  ArrowRepeat,
+  PencilSquare,
+  Trash,
+  CreditCard,
+  Star
+} from 'react-bootstrap-icons';
 import 'react-day-picker/dist/style.css';
 import Modal from 'react-bootstrap/Modal';
 import Form from 'react-bootstrap/Form';
@@ -32,6 +52,7 @@ const STATUS_COLORS = {
   retracted: '#757575'
 };
 
+// StatusBadge component to display transaction status with color coding
 function StatusBadge({ status }) {
   const color = STATUS_COLORS[status] || '#757575';
   const label = {
@@ -62,6 +83,7 @@ function StatusBadge({ status }) {
   );
 }
 
+// ShowTransaction component to display transaction details and actions
 export default function ShowTransaction() {
   const { id } = useParams();
   const { user } = useContext(AuthContext);
@@ -158,6 +180,7 @@ export default function ShowTransaction() {
     throw new Error('Failed to refetch transaction');
   };
 
+  // Handle various actions based on user role and transaction status
   const handleAction = async (action) => {
     setUpdating(true);
     try {
@@ -176,6 +199,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Complete the transaction
   const handleCompleteTransaction = async () => {
     setUpdating(true);
     try {
@@ -194,20 +218,22 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Handle review submission
   const handleReviewSubmitted = async () => {
     setCanReview({ canReview: false, role: null });
     setShowReviewModal(false);
     
     // Determine which user was reviewed and their role
     const reviewedUserId = canReview.role === 'borrower' 
-      ? transaction.lender._id 
-      : transaction.borrower._id;
+      ? transaction.lender?._id 
+      : transaction.borrower?._id;
     const reviewedUserRole = canReview.role === 'borrower' ? 'lender' : 'borrower';
     
     // Navigate to the reviewed user's page with the appropriate tab
     navigate(`/users/${reviewedUserId}/reviews?tab=${reviewedUserRole}`);
   };
 
+  // Handle renegotiation proposal submission
   const handleRenegotiate = async ({ from, to, message }, id) => {
     try {
       const token = localStorage.getItem('token');
@@ -233,6 +259,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle accepting or declining a renegotiation proposal
   const handleAcceptRenegotiation = async (id) => {
     try {
       const token = localStorage.getItem('token');
@@ -252,6 +279,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle declining a renegotiation proposal
   const handleDeclineRenegotiation = async (id) => {
     try {
       const token = localStorage.getItem('token');
@@ -271,6 +299,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle deleting the transaction
   const handleDeleteClick = async () => {
     if (!window.confirm('Are you sure you want to delete this transaction?')) return;
     try {
@@ -287,6 +316,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle getting the return code for the lender
   const handleGetReturnCode = async () => {
     setReturnError('');
     try {
@@ -306,6 +336,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle submitting the return code for the borrower
   const handleSubmitReturnCode = async () => {
     setReturnError('');
     try {
@@ -352,8 +383,6 @@ export default function ShowTransaction() {
             // Update counters since transaction status changed
             fetchCounts();
             
-            // Review modal timing is now handled manually - no auto-show
-            // Only show review modal immediately if user is NOT the borrower
             if (user?.id !== transaction.borrower?._id) {
               // Show review modal for lender immediately
               setShowReviewModal(true);
@@ -372,6 +401,7 @@ export default function ShowTransaction() {
     }
   };
 
+  // Handle force completing the return
   const handleForceComplete = async () => {
     setReturnError('');
     setUpdating(true);
@@ -384,7 +414,7 @@ export default function ShowTransaction() {
       if (res.ok) {
         // Save notification for borrower
         if (transaction.borrower?.email) {
-          saveForceNotification(transaction.borrower.email, transaction, 'return');
+          saveForceNotification(transaction.borrower?.email, transaction, 'return');
         }
         
         // Refetch transaction data to update the UI
@@ -408,6 +438,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Handle submitting the pickup code
   const handlePickupCodeSubmit = async () => {
     setPickupError('');
     setUpdating(true);
@@ -430,14 +461,7 @@ export default function ShowTransaction() {
         setPickupCodeInput('');
         
         // Show payment success popup for lender (who enters the code)
-        // The lender receives payment when borrower's pickup code is confirmed
         setShowPaymentSuccess(true);
-        // Message will stay visible until user manually dismisses it
-        
-        // If this is a different user session (borrower not present), save notification for lender
-        // The payment success is already shown for current lender, but if lender logs in later, they should see it
-        // We could add this, but typically the lender who enters the code sees the immediate notification
-        // Only add if we want to ensure lender always sees this even if they log out/in
         
         // Update counters since transaction status changed
         fetchCounts();
@@ -450,6 +474,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Handle confirming no damage by the lender
   const handleConfirmNoDamage = async () => {
     setUpdating(true);
     try {
@@ -488,6 +513,7 @@ export default function ShowTransaction() {
     setUpdating(false);
   };
 
+  // Handle reporting damage by the lender
   const handleReportDamage = async () => {
     setDamageError('');
     setUpdating(true);
@@ -603,7 +629,9 @@ export default function ShowTransaction() {
       {/* Inspection Message for Borrower */}
       {showInspectionMessage && user?.id === transaction.borrower?._id && (
         <Alert variant="info" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowInspectionMessage(false)}>
-          <div className="me-3" style={{ fontSize: '1.5rem' }}>🔍</div>
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>
+            <Search />
+          </div>
           <div className="flex-grow-1">
             <Alert.Heading className="h6 mb-2">Item Successfully Returned!</Alert.Heading>
             <div className="small">
@@ -621,7 +649,9 @@ export default function ShowTransaction() {
       {/* Payment Success Message for Lender */}
       {showPaymentSuccess && (
         <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowPaymentSuccess(false)}>
-            <div className="me-3" style={{ fontSize: '1.5rem' }}>💰</div>
+            <div className="me-3" style={{ fontSize: '1.5rem' }}>
+              <CurrencyDollar />
+            </div>
             <div className="flex-grow-1">
               <Alert.Heading className="h6 mb-2">Payment Received!</Alert.Heading>
               <div className="small">
@@ -673,7 +703,7 @@ export default function ShowTransaction() {
       {showDepositMessage && depositMessageInfo && user?.id === transaction.lender?._id && (
         <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowDepositMessage(false)}>
           <div className="me-3" style={{ fontSize: '1.5rem' }}>
-            {depositMessageInfo.noDamage ? '✅' : '⚠️'}
+            {depositMessageInfo.noDamage ? <CheckCircle /> : <ExclamationTriangle />}
           </div>
           <div className="flex-grow-1">
             <Alert.Heading className="h6 mb-2">
@@ -706,7 +736,7 @@ export default function ShowTransaction() {
       {showBorrowerNotification && borrowerNotificationInfo && user?.id === transaction.borrower?._id && (
         <Alert variant="info" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowBorrowerNotification(false)}>
           <div className="me-3" style={{ fontSize: '1.5rem' }}>
-            {borrowerNotificationInfo.depositRefundPercentage === 100 ? '✅' : '⚠️'}
+            {borrowerNotificationInfo.depositRefundPercentage === 100 ? <CheckCircle /> : <ExclamationTriangle />}
           </div>
           <div className="flex-grow-1">
             <Alert.Heading className="h6 mb-2">
@@ -754,7 +784,7 @@ export default function ShowTransaction() {
       })() && (
         <Alert variant={transaction.depositRefundPercentage === 100 ? "success" : "warning"} className="d-flex align-items-center mb-4">
           <div className="me-3" style={{ fontSize: '1.5rem' }}>
-            {transaction.depositRefundPercentage === 100 ? '✅' : '⚠️'}
+            {transaction.depositRefundPercentage === 100 ? <CheckCircle /> : <ExclamationTriangle />}
           </div>
           <div className="flex-grow-1">
             <Alert.Heading className="h6 mb-2">
@@ -827,7 +857,8 @@ export default function ShowTransaction() {
                         onClick={() => handleAction('accept')}
                         className="rounded-pill"
                       >
-                        ✓ Accept
+                        <CheckCircle className="me-1" />
+                        Accept
                       </Button>
                       <Button
                         variant="danger"
@@ -835,7 +866,8 @@ export default function ShowTransaction() {
                         onClick={() => handleAction('decline')}
                         className="rounded-pill"
                       >
-                        ✗ Decline
+                        <XCircle className="me-1" />
+                        Decline
                       </Button>
                       <Button
                         variant="warning"
@@ -843,7 +875,8 @@ export default function ShowTransaction() {
                         onClick={() => setShowRenegotiateForm(transaction._id)}
                         className="rounded-pill"
                       >
-                        ⟲ Renegotiate
+                        <ArrowRepeat className="me-1" />
+                        Renegotiate
                       </Button>
                     </>
                   );
@@ -858,7 +891,8 @@ export default function ShowTransaction() {
                         onClick={() => handleAcceptRenegotiation(transaction._id)}
                         className="rounded-pill"
                       >
-                        ✓ Accept Proposal
+                        <CheckCircle className="me-1" />
+                        Accept Proposal
                       </Button>
                       <Button
                         variant="danger"
@@ -866,7 +900,8 @@ export default function ShowTransaction() {
                         onClick={() => handleDeclineRenegotiation(transaction._id)}
                         className="rounded-pill"
                       >
-                        ✗ Decline Proposal
+                        <XCircle className="me-1" />
+                        Decline Proposal
                       </Button>
                     </>
                   );
@@ -883,14 +918,16 @@ export default function ShowTransaction() {
                         onClick={() => navigate(`/transactions/${transaction._id}/edit`)}
                         className="rounded-pill"
                       >
-                        ✏️ Edit Request
+                        <PencilSquare className="me-1" />
+                        Edit Request
                       </Button>
                       <Button 
                         variant="outline-danger" 
                         onClick={handleDeleteClick}
                         className="rounded-pill"
                       >
-                        🗑️ Delete Request
+                        <Trash className="me-1" />
+                        Delete Request
                       </Button>
                     </>
                   );
@@ -907,7 +944,8 @@ export default function ShowTransaction() {
                       className="rounded-pill px-4"
                       size="lg"
                     >
-                      💳 Pay Now
+                      <CreditCard className="me-1" />
+                      Pay Now
                     </Button>
                 );
                 }
@@ -923,7 +961,8 @@ export default function ShowTransaction() {
                       disabled={updating}
                       className="rounded-pill"
                     >
-                      🔑 Enter Pickup Code
+                      <Key className="me-1" />
+                      Enter Pickup Code
                     </Button>
                   );
                 }
@@ -940,7 +979,8 @@ export default function ShowTransaction() {
                         disabled={updating}
                         className="rounded-pill"
                       >
-                        🔐 Generate Return Code
+                        <ShieldCheck className="me-1" />
+                        Generate Return Code
                       </Button>
                       <Button
                         variant="outline-danger"
@@ -948,7 +988,8 @@ export default function ShowTransaction() {
                         disabled={updating}
                         className="rounded-pill"
                       >
-                        ⚠️ Force Return
+                        <ExclamationTriangle className="me-1" />
+                        Force Return
                       </Button>
                     </>
                   );
@@ -968,7 +1009,17 @@ export default function ShowTransaction() {
                         disabled={updating || transaction.damageReported}
                         className="rounded-pill"
                       >
-                        {transaction.damageReported ? '✓ Damage Reported' : '⚠️ Report Damage'}
+                        {transaction.damageReported ? (
+                          <>
+                            <CheckCircle className="me-1" />
+                            Damage Reported
+                          </>
+                        ) : (
+                          <>
+                            <ExclamationTriangle className="me-1" />
+                            Report Damage
+                          </>
+                        )}
                       </Button>
                       <Button
                         variant="success"
@@ -976,7 +1027,8 @@ export default function ShowTransaction() {
                         disabled={updating || transaction.damageReported}
                         className="rounded-pill"
                       >
-                        ✅ No Damage - Release Deposit
+                        <CheckSquare className="me-1" />
+                        No Damage - Release Deposit
                       </Button>
                     </>
                   );
@@ -993,7 +1045,7 @@ export default function ShowTransaction() {
                       disabled={updating}
                       className="rounded-pill"
                     >
-                      📦 Return Item
+                      Return Item
                     </Button>
                   );
                 }
@@ -1020,7 +1072,7 @@ export default function ShowTransaction() {
                             
                             // Save notification for lender
                             if (transaction.lender?.email) {
-                              saveForceNotification(transaction.lender.email, transaction, 'pickup');
+                              saveForceNotification(transaction.lender?.email, transaction, 'pickup');
                             }
                           } else {
                             setError(data.error || 'Failed to force pick up');
@@ -1035,7 +1087,8 @@ export default function ShowTransaction() {
                       disabled={updating}
                       className="rounded-pill"
                     >
-                      ⚠️ Force Pick Up
+                      <ExclamationTriangle className="me-1" />
+                      Force Pick Up
                     </Button>
                   );
                 }
@@ -1047,7 +1100,8 @@ export default function ShowTransaction() {
                       onClick={() => setShowReviewModal(true)}
                       className="rounded-pill"
                     >
-                      ⭐ Leave Review
+                      <Star className="me-1" />
+                      Leave Review
                     </Button>
                   );
                 }
@@ -1061,7 +1115,9 @@ export default function ShowTransaction() {
       {/* Deposit Refund Success Alert */}
       {showRefundSuccess && depositRefundInfo && user?.id === transaction.borrower?._id && (
         <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowRefundSuccess(false)}>
-          <div className="me-3" style={{ fontSize: '1.5rem' }}>💰</div>
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>
+            <CurrencyDollar />
+          </div>
           <div className="flex-grow-1">
             <Alert.Heading className="h6 mb-2">Deposit Refund Processed Successfully!</Alert.Heading>
             <div className="small">
@@ -1136,7 +1192,7 @@ export default function ShowTransaction() {
           <Card.Body className="bg-light">
             <div className="d-flex align-items-start">
               <div className="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px', fontSize: '1.2rem' }}>
-                🔑
+                <Key />
               </div>
               <div>
                 <h6 className="fw-bold mb-2">PickUp Code</h6>
@@ -1148,7 +1204,7 @@ export default function ShowTransaction() {
                   {lender?.email && (
                     <>
                       <br />
-                      Contact: <a href={`mailto:${lender.email}`}>{lender.email}</a>
+                      Contact: <a href={`mailto:${lender?.email}`}>{lender?.email}</a>
                     </>
                   )}
                 </small>
@@ -1163,7 +1219,7 @@ export default function ShowTransaction() {
           <Card.Body className="bg-light">
             <div className="d-flex align-items-start">
               <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px', fontSize: '1.2rem' }}>
-                🔐
+                <ShieldCheck />
               </div>
               <div>
                 <h6 className="fw-bold mb-2">Return Code</h6>
@@ -1204,9 +1260,10 @@ export default function ShowTransaction() {
                             size="sm"
                             className="rounded-pill px-2 py-1"
                             style={{ fontSize: '0.75rem', lineHeight: '1' }}
-                            onClick={() => navigate(`/users/${transaction.borrower._id}/reviews?tab=borrower`)}
+                            onClick={() => navigate(`/users/${transaction.borrower?._id}/reviews?tab=borrower`)}
                           >
-                            👤 Reviews
+                            <PersonCheck className="me-1" style={{ fontSize: '0.75rem' }} />
+                            Reviews
                           </Button>
                         )}
                       </div>
@@ -1222,9 +1279,10 @@ export default function ShowTransaction() {
                             size="sm"
                             className="rounded-pill px-2 py-1"
                             style={{ fontSize: '0.75rem', lineHeight: '1' }}
-                            onClick={() => navigate(`/users/${transaction.lender._id}/reviews?tab=lender`)}
+                            onClick={() => navigate(`/users/${transaction.lender?._id}/reviews?tab=lender`)}
                           >
-                            👤 Reviews
+                            <PersonCheck className="me-1" style={{ fontSize: '0.75rem' }} />
+                            Reviews
                           </Button>
                         )}
                       </div>
@@ -1245,7 +1303,8 @@ export default function ShowTransaction() {
                       {depositRefundInfo && user?.id === transaction.borrower?._id && (
                         <div className="mt-3 p-3 bg-success bg-opacity-10 border border-success rounded">
                           <h6 className="text-success mb-2">
-                            💰 Deposit Refund Processed
+                            <CurrencyDollar className="me-1" />
+                            Deposit Refund Processed
                           </h6>
                           <div className="small">
                             <div className="d-flex justify-content-between mb-1">
@@ -1272,7 +1331,8 @@ export default function ShowTransaction() {
                                 </div>
                                 {depositRefundInfo.depositRefundPercentage < 100 && (
                                   <div className="text-warning small mt-1">
-                                    ⚠️ €{depositRefundInfo.toLender?.toFixed(2)} ({100 - depositRefundInfo.depositRefundPercentage}% of deposit) deducted for damage compensation
+                                    <ExclamationTriangle className="me-1" />
+                                    €{depositRefundInfo.toLender?.toFixed(2)} ({100 - depositRefundInfo.depositRefundPercentage}% of deposit) deducted for damage compensation
                                   </div>
                                 )}
                               </div>
@@ -1385,12 +1445,12 @@ export default function ShowTransaction() {
               <Card.Body>
                 <div className="d-flex align-items-start">
                   <div className="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px', fontSize: '1.2rem' }}>
-                    ❌
+                    <XCircle />
                   </div>
                   <div>
                     <h6 className="fw-bold text-danger mb-2">Request Declined</h6>
                     <p className="mb-0 text-muted">
-                      {transaction.lenderMessage ? transaction.lenderMessage : 'The lender has declined your request.'}
+                      {transaction.lenderMessage || 'The request has been declined.'}
                     </p>
                   </div>
                 </div>
@@ -1605,25 +1665,24 @@ export default function ShowTransaction() {
               alt={`${transaction.item.title} - Image ${currentImageIndex + 1}`}
             />
             
-            {/* Navigation buttons */}
-            {transaction.item.images.length > 1 && (
-              <>
-                <button
-                  className="image-modal-nav image-modal-prev"
-                  onClick={prevImage}
-                  aria-label="Previous image"
-                >
-                  ‹
-                </button>
-                <button
-                  className="image-modal-nav image-modal-next"
-                  onClick={nextImage}
-                  aria-label="Next image"
-                >
-                  ›
-                </button>
-              </>
-            )}
+            {/* Navigation buttons */}              {transaction.item.images.length > 1 && (
+                <>
+                  <button
+                    className="image-modal-nav image-modal-prev"
+                    onClick={prevImage}
+                    aria-label="Previous image"
+                  >
+                    <ArrowLeft />
+                  </button>
+                  <button
+                    className="image-modal-nav image-modal-next"
+                    onClick={nextImage}
+                    aria-label="Next image"
+                  >
+                    <ArrowRight />
+                  </button>
+                </>
+              )}
             
             {/* Close button */}
             <button
@@ -1631,7 +1690,7 @@ export default function ShowTransaction() {
               onClick={closeImageModal}
               aria-label="Close modal"
             >
-              ×
+              <X />
             </button>
             
             {/* Image counter */}
@@ -1707,7 +1766,9 @@ export default function ShowTransaction() {
       {/* Deposit Processing Success Alert for Lender */}
       {showDepositMessage && depositMessageInfo && user?.id === transaction.lender?._id && (
         <Alert variant="success" className="d-flex align-items-center mb-4" dismissible onClose={() => setShowDepositMessage(false)}>
-          <div className="me-3" style={{ fontSize: '1.5rem' }}>✅</div>
+          <div className="me-3" style={{ fontSize: '1.5rem' }}>
+            <CheckSquare />
+          </div>
           <div className="flex-grow-1">
             <Alert.Heading className="h6 mb-2">Deposit Processing Complete!</Alert.Heading>
             <div className="small">

@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import TransactionList from '../components/TransactionList';
 import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 import { usePremium } from '../hooks/usePremium';
+import { Star } from 'react-bootstrap-icons';
 
 const STATUS_OPTIONS = [
   'requested',
@@ -16,6 +17,7 @@ const STATUS_OPTIONS = [
   'retracted'
 ];
 
+// MyLendings Component
 export default function MyLendings() {
   const { user } = useContext(AuthContext);
   const { isPremium } = usePremium();
@@ -27,7 +29,8 @@ export default function MyLendings() {
         <Alert variant="warning" className="mb-4">
           <div className="d-flex justify-content-between align-items-center">
             <span>
-              ⭐ <strong>Boost Your Listings!</strong> Premium items appear first in search results, getting more views and requests.
+              <Star className="me-1" style={{ color: '#ffc107' }} />
+              <strong>Boost Your Listings!</strong> Premium items appear first in search results, getting more views and requests.
             </span>
             <Button 
               variant="warning" 
@@ -41,9 +44,7 @@ export default function MyLendings() {
       )}
       
       <TransactionList
-        endpoint="/api/transactions/lendings"
-        title="My Lendings"
-        statusOptions={STATUS_OPTIONS}
+        context="lendings"
       />
 
       <PremiumUpgradeModal 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// This hook manages the state and logic for editing an existing item
 export function useEditItem() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -18,11 +19,11 @@ export function useEditItem() {
       try {
         const res = await axios.get(`/api/items/${id}`);
         const it = res.data;
-        setTitle(it.title);
-        setDescription(it.description);
-        setPrice(it.price);
-        setCategory(it.category);
-        setAvailability(it.availability || []);
+        setTitle(it?.title || '');
+        setDescription(it?.description || '');
+        setPrice(it?.price || 0);
+        setCategory(it?.category || '');
+        setAvailability(it?.availability || []);
       } catch (e) {
         setError('Failed to load item');
       } finally {
@@ -40,6 +41,7 @@ export function useEditItem() {
     setAvailability(ranges);
   };
 
+  // Function to handle the form submission for editing the item
   const handleSubmit = async e => {
     e.preventDefault();
     const updated = {

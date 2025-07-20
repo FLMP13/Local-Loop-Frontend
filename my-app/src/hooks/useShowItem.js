@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// This hook manages the state and logic for showing a single item
 export function useShowItem() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [item, setItem] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -27,16 +29,29 @@ export function useShowItem() {
     fetchItem();
   }, [id]);
 
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
       await axios.delete(`/api/items/${id}`);
       navigate('/');
     } catch (err) {
       console.error('Error deleting item in hook:', err);
       setError('Failed to delete item. Please try again.');
+    } finally {
+      setShowDeleteModal(false);
     }
   };
 
-  return { item, error, loading, handleDelete };
+  return { 
+    item, 
+    error, 
+    loading, 
+    showDeleteModal,
+    setShowDeleteModal,
+    handleDeleteClick,
+    handleDeleteConfirm
+  };
 }
