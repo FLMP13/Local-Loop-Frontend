@@ -46,6 +46,23 @@ export default function CreateProfile() {
     setError('')                                             // clear previous error
     setIsLoading(true)
 
+    // Client-side password validation
+    if (form.password.length < 6) {
+      setError('Password must be at least 6 characters long.')
+      setIsLoading(false)
+      return
+    }
+
+    const hasUpperCase = /[A-Z]/.test(form.password)
+    const hasLowerCase = /[a-z]/.test(form.password)
+    const hasNumbers = /\d/.test(form.password)
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number.')
+      setIsLoading(false)
+      return
+    }
+
     // build FormData including file
     const data = new FormData()
     data.append('firstName', form.firstName)
@@ -69,7 +86,12 @@ export default function CreateProfile() {
       // POST to signup endpoint
       const res = await axios.post(
         '/api/auth/signup',
-        data
+        data,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
       )
       console.log('Signup response:', res.data)
       
@@ -222,6 +244,9 @@ export default function CreateProfile() {
                 minLength={6}
                 required
               />
+              <Form.Text className="text-muted small">
+                Must be at least 6 characters with uppercase, lowercase, and number
+              </Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3">

@@ -274,12 +274,35 @@ export default function MyProfile() {
     e.preventDefault()
     setPwError(''); setPwSuccess('')
 
+    // Check if passwords match
     if (passwords.newPassword !== passwords.confirmPassword) {
       setPwError('New passwords do not match.')
       return
     }
 
+    // Check if new password is same as old password
+    if (passwords.oldPassword === passwords.newPassword) {
+      setPwError('New password must be different from current password.')
+      return
+    }
+
     // Check password strength
+    if (passwords.newPassword.length < 6) {
+      setPwError('New password must be at least 6 characters long.')
+      return
+    }
+
+    // Additional password strength requirements
+    const hasUpperCase = /[A-Z]/.test(passwords.newPassword)
+    const hasLowerCase = /[a-z]/.test(passwords.newPassword)
+    const hasNumbers = /\d/.test(passwords.newPassword)
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(passwords.newPassword)
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      setPwError('New password must contain at least one uppercase letter, one lowercase letter, and one number.')
+      return
+    }
+
     try {
       const token = localStorage.getItem('token')
       await axios.put(
@@ -292,11 +315,11 @@ export default function MyProfile() {
           headers: { Authorization: `Bearer ${token}` }
         }
       )
-      setPwSuccess('Password changed!')
+      setPwSuccess('Password changed successfully!')
       setPasswords({ oldPassword: '', newPassword: '', confirmPassword: '' })
     } catch (err) {
       console.error(err)
-      setPwError('Password update failed.')
+      setPwError(err.response?.data?.error || 'Password update failed.')
     }
   }
 
@@ -817,10 +840,14 @@ export default function MyProfile() {
                         value={passwords.newPassword}
                         onChange={handlePasswordChange}
                         required
+                        minLength={6}
                         className="rounded-pill px-4 py-3"
                         style={{ fontSize: '1rem' }}
                         placeholder="Enter new password"
                       />
+                      <Form.Text className="text-muted small">
+                        Must be at least 6 characters with uppercase, lowercase, and number
+                      </Form.Text>
                     </Form.Group>
                   </Col>
                   <Col md={4}>

@@ -222,7 +222,7 @@ export default function TransactionList({ context = 'all' }) {
     }
   };
 
-  // Handle reject action for transactions
+  // Handle reject action for transactions (lenders rejecting requests)
   const handleReject = async (transactionId) => {
     try {
       const token = localStorage.getItem('token');
@@ -236,6 +236,23 @@ export default function TransactionList({ context = 'all' }) {
       }
     } catch (err) {
       console.error('Failed to reject transaction:', err);
+    }
+  };
+
+  // Handle retract action for transactions (borrowers retracting accepted transactions)
+  const handleRetract = async (transactionId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/transactions/${transactionId}/retract`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        fetchTransactions(); // Refresh the list
+      }
+    } catch (err) {
+      console.error('Failed to retract transaction:', err);
     }
   };
 
@@ -295,7 +312,7 @@ export default function TransactionList({ context = 'all' }) {
           <Button
             variant="danger"
             size="sm"
-            onClick={e => { e.stopPropagation(); handleReject(transaction._id); }}
+            onClick={e => { e.stopPropagation(); handleRetract(transaction._id); }}
             className="rounded-pill"
           >
             <XCircle className="me-1" />
