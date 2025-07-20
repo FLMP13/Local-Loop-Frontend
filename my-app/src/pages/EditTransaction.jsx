@@ -5,6 +5,7 @@ import { Container, Card, Button, Alert, Form, Spinner } from 'react-bootstrap';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
+// EditTransaction component allows users to edit an existing transaction
 export default function EditTransaction() {
   const { id } = useParams();
   const { user } = useContext(AuthContext);
@@ -15,6 +16,7 @@ export default function EditTransaction() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // Fetch transaction details on mount
   useEffect(() => {
     const fetchTransaction = async () => {
       const token = localStorage.getItem('token');
@@ -56,6 +58,7 @@ export default function EditTransaction() {
     );
   };
 
+  // Handle form submission to update transaction
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedRange?.from || !selectedRange?.to) {

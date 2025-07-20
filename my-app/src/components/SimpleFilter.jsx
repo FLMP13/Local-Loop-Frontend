@@ -8,42 +8,54 @@ const statusOptions = [
   'returned', 'completed', 'renegotiation_requested', 'retracted'
 ];
 
+// Simple filter component for searching and filtering items
 export default function SimpleFilter({ filter, setFilter }) {
+  // Provide safe defaults in case filter is undefined
+  const safeFilter = filter || {};
+  
+  // Helper function to safely update filter with proper fallbacks
+  const updateFilter = (field, value) => {
+    if (setFilter) {
+      setFilter(prevFilter => {
+        const currentFilter = prevFilter || { name: '', status: 'all', maxPrice: '', sortBy: 'date_desc' };
+        return { ...currentFilter, [field]: value };
+      });
+    }
+  };
+  
   return (
     <Form className="mb-3">
       <Row className="g-2">
         <Col md>
           <Form.Control
             placeholder="Name, Description, or Username"
-            value={filter.name}
-            onChange={e => setFilter(f => ({ ...f, name: e.target.value }))}
+            value={safeFilter.name || ''}
+            onChange={e => updateFilter('name', e.target.value)}
           />
         </Col>
         <Col md>
           <Form.Control
             type="number"
             placeholder="Max Price"
-            value={filter.maxPrice}
-            onChange={e => setFilter(f => ({ ...f, maxPrice: e.target.value }))}
+            value={safeFilter.maxPrice || ''}
+            onChange={e => updateFilter('maxPrice', e.target.value)}
           />
         </Col>
-        {statusOptions && (
-          <Col md>
-            <Form.Select
-              value={filter.status}
-              onChange={e => setFilter(f => ({ ...f, status: e.target.value }))}
-            >
-              <option value="">All Statuses</option>
-              {statusOptions.map(s => (
-                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ')}</option>
-              ))}
-            </Form.Select>
-          </Col>
-        )}
         <Col md>
           <Form.Select
-            value={filter.sortBy || 'date_desc'}
-            onChange={e => setFilter(f => ({ ...f, sortBy: e.target.value }))}
+            value={safeFilter.status || 'all'}
+            onChange={e => updateFilter('status', e.target.value)}
+          >
+            <option value="all">All Statuses</option>
+            {statusOptions.map(s => (
+              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ')}</option>
+            ))}
+          </Form.Select>
+        </Col>
+        <Col md>
+          <Form.Select
+            value={safeFilter.sortBy || 'date_desc'}
+            onChange={e => updateFilter('sortBy', e.target.value)}
           >
             <option value="date_desc">Newest First</option>
             <option value="date_asc">Oldest First</option>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 
+// PayPal payment component for both transactions and subscriptions
 export default function PayPalPayment({ 
   clientId, 
   type = 'transaction', 

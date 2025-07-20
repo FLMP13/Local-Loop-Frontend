@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
+// This hook manages the state and logic for adding a new item
 export function useAddItem() {
   const { user, token } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -64,11 +65,12 @@ export function useAddItem() {
     }
   };
 
+  // Function to submit the item data to the server
   const submitItem = async () => {
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
-    formData.append('price', parseFloat(price));
+    formData.append('price', Math.round(parseFloat(price) * 100) / 100);
     formData.append('category', category);
     images.forEach(img => formData.append('images', img));
 

@@ -4,13 +4,8 @@ import './index.css'
 import React, { useContext, useEffect, useState, createContext } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { BrowserRouter as Router } from 'react-router-dom';
-import Container from 'react-bootstrap/Container';
-import Navbar from 'react-bootstrap/Navbar';
-import Nav from 'react-bootstrap/Nav';
-import Button from 'react-bootstrap/Button';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
-import NavDropdown from 'react-bootstrap/NavDropdown';
-import Alert from 'react-bootstrap/Alert';
+import { Container, Navbar, Nav, NavDropdown, Button, ButtonGroup, Alert, Modal } from 'react-bootstrap';
+import { CurrencyDollar, ExclamationTriangle, BoxArrowRight } from 'react-bootstrap-icons';
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import CreateProfile from './pages/CreateProfile.jsx'
@@ -40,6 +35,7 @@ import {
 export const CounterContext = createContext();
 export const NotificationContext = createContext();
 
+// Notification bubble component to show counts
 function NotificationBubble({ count }) {
   if (!count || count < 1) return null;
   return (
@@ -66,78 +62,76 @@ function NotificationBubble({ count }) {
   );
 }
 
+// Main App component
 export default function App() {
   const { user, logout } = useContext(AuthContext);
   const [borrowingsCount, setBorrowingsCount] = useState(0);
   const [lendingsCount, setLendingsCount] = useState(0);
   const [hiddenNotifications, setHiddenNotifications] = useState(new Set());
   const [tempNotification, setTempNotification] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   // Helper function to check if a transaction has active buttons for the user
   const hasActiveButtons = (transaction, user) => {
-    if (!user || !transaction) return false;
-    
-    // Get hidden notifications from localStorage
-    const savedHidden = localStorage.getItem('hiddenNotifications');
-    const hiddenNotifications = savedHidden ? new Set(JSON.parse(savedHidden)) : new Set();
-    
+    if (!transaction || !user) return false;
+
     // Lender: Accept/Decline/Renegotiate if requested
     if (user.id === transaction.lender?._id && transaction.status === 'requested') {
       return true;
     }
-    
+
+    // Lender: Accept/Decline if renegotiation_requested
+    if (user.id === transaction.lender?._id && transaction.status === 'renegotiation_requested') {
+      return true;
+    }
+
     // Borrower: Accept/Decline if renegotiation_requested
     if (user.id === transaction.borrower?._id && transaction.status === 'renegotiation_requested') {
       return true;
     }
-    
+
     // Borrower: Edit/Delete for requested (only when not renegotiation_requested)
     if (user.id === transaction.borrower?._id && transaction.status === 'requested') {
       return true;
     }
-    
+
     // Borrower: Pay button for accepted
     if (user.id === transaction.borrower?._id && transaction.status === 'accepted') {
       return true;
     }
-    
+
     // Lender: Enter pickup code after payment
     if (user.id === transaction.lender?._id && transaction.status === 'paid') {
       return true;
     }
-    
+
     // Lender: Generate/View Return Code and Force Return if borrowed
     if (user.id === transaction.lender?._id && transaction.status === 'borrowed') {
       return true;
     }
-    
+
     // Borrower: Enter the code after returning the item
     if (user.id === transaction.borrower?._id && transaction.status === 'borrowed') {
       return true;
     }
-    
+
     // Borrower: Force Pick Up if paid
     if (user.id === transaction.borrower?._id && transaction.status === 'paid') {
       return true;
     }
-    
+
     // Lender: Inspect and report damage after return
     if (user.id === transaction.lender?._id && transaction.status === 'returned') {
       return true;
     }
-    
-    // Borrower: New notification available when transaction completed (deposit processed)
-    // Only if not hidden
-    if (user.id === transaction.borrower?._id && transaction.status === 'completed' && 
-        transaction.depositReturned && transaction.depositRefundPercentage !== undefined &&
-        !hiddenNotifications.has(transaction._id)) {
+
+    // Borrower: Enter return code if not already used
+    if (user.id === transaction.borrower?._id && transaction.status === 'returned' && !transaction.returnCodeUsed) {
       return true;
     }
 
-  
-    
     return false;
   };
 
@@ -279,7 +273,7 @@ export default function App() {
                   {user && (
                     <Button
                       variant="outline-secondary"
-                      onClick={handleLogout}
+                      onClick={handleLogoutClick}
                       style={{ borderRadius: '8px' }}
                     >
                       Logout
@@ -301,7 +295,7 @@ export default function App() {
               className="d-flex align-items-center mb-4"
             >
               <div className="me-3" style={{ fontSize: '1.5rem' }}>
-                {tempNotification.variant === 'success' ? '💰' : '�'}
+                {tempNotification.variant === 'success' ? <CurrencyDollar /> : <ExclamationTriangle />}
               </div>
               <div className="flex-grow-1">
                 <Alert.Heading className="h6 mb-2">{tempNotification.title}</Alert.Heading>
@@ -341,16 +335,54 @@ export default function App() {
           <Route path="/users/:userId/reviews" element={<UserReviews />} />
         </Routes>
         
+        {/* Custom Logout Confirmation Modal */}
+        <Modal show={showLogoutModal} onHide={() => setShowLogoutModal(false)} centered>
+          <Modal.Header closeButton className="border-0">
+            <Modal.Title className="d-flex align-items-center">
+              <ExclamationTriangle className="me-2 text-warning" />
+              Confirm Logout
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="text-center py-4">
+            <div className="mb-3">
+              <h5 className="fw-bold mb-2">Are you sure you want to log out?</h5>
+              <p className="text-muted mb-0">
+                You'll need to sign in again to access your account and transactions.
+              </p>
+            </div>
+          </Modal.Body>
+          <Modal.Footer className="border-0 justify-content-center">
+            <Button 
+              variant="outline-secondary" 
+              onClick={() => setShowLogoutModal(false)}
+              className="rounded-pill px-4"
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={handleLogoutConfirm}
+              className="rounded-pill px-4"
+            >
+              <BoxArrowRight className="me-2" />
+              Log Out
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
         {/* Global renewal notification component */}
         <RenewalNotification />
       </>
     </CounterContext.Provider>
   );
 
-  function handleLogout() {
-    if (window.confirm('Are you sure you want to log out?')) {
-      logout();
-      navigate('/'); // Redirect to home after logout
-    }
+  function handleLogoutClick() {
+    setShowLogoutModal(true);
+  }
+
+  function handleLogoutConfirm() {
+    logout();
+    setShowLogoutModal(false);
+    navigate('/');
   }
 }

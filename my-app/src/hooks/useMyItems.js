@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// This hook manages the state and logic for fetching items created by the current user
 export function useMyItems(statusFilter) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');

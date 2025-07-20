@@ -31,14 +31,14 @@ export const createMessage = (type, data) => {
     const fee = data.total - data.deposit;
     const share = fee * 0.95;
     return {
-      title: '💰 Payment Received!',
+      title: 'Payment Received!',
       text: `${data.borrower} forced pickup of "${data.title}". Your share: €${share.toFixed(2)}`,
       variant: 'success'
     };
   }
   
   return {
-    title: '📦 Item Returned!', 
+    title: 'Item Returned!', 
     text: `${data.lender} forced return of "${data.title}". Inspection and deposit pending.`,
     variant: 'info'
   };
